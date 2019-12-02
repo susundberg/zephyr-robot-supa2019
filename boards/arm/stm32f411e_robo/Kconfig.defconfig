@@ -1,0 +1,25 @@
+# STM32F411E-DISCO board configuration
+
+# Copyright (c) 2017 Fenix Engineering Solutions
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32F411E_ROBO
+
+config BOARD
+	default "stm32f411e_disco"
+
+if UART_CONSOLE
+
+config UART_2
+	default y
+endif # UART_CONSOLE
+
+
+
+if PWM
+config PWM_STM32_2
+       default y
+endif # PWM
+
+
+endif # BOARD_STM32F411E_ROBO

@@ -28,10 +28,28 @@ Motor related
 
 
 **Other**
+
 | Function        |    Pin           |   Info  |
 | --------------- | ---------------- | ----- |
 | IR-Sensor       | PC6 - ISR6       | (blu) |
-| Emergency stop  | PD3 - ISR3       | (bro) |
+| Emergency stop  | PD3 - ISR3       |  |
+
+**Big motor**
+
+| Function        |    Pin           |   Info  |
+| --------------- | ---------------- | ----- |
+| Big Enable      | PD8 - DOUT       |  |
+| Big current meas| PC4 - ADC1-14    |  |
+
+
+## Motor control
+| Function        | A  |  B | PWM  |
+| --------------- | -- | -- | ---  |
+| Forward         | 1  | 0  |  X   |
+| Backward        | 0  | 1  |  X   |
+| Force stop      | 1  | 1  |  1   |
+| Free roll       | 0  | 0  |  0   |
+
 
 
 

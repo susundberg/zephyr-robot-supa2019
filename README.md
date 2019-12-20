@@ -43,6 +43,9 @@ Motor related
 
 
 ## Motor control
+
+Robotdyn shield: https://robotdyn.com/motor-shield-2a-l298p-2-motors-for-arduino.html
+
 | Function        | A  |  B | PWM  |
 | --------------- | -- | -- | ---  |
 | Forward         | 1  | 0  |  X   |

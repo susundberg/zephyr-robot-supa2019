@@ -24,6 +24,7 @@
 #include <shell/shell.h>
 #include <shell/shell_uart.h>
 
+#include "motors.h"
 
 
 LOG_MODULE_REGISTER(app);
@@ -58,6 +59,12 @@ uint32_t GLOBAL_error = 0;
 
 #define SHE_ERR( fmt, ...) \
   shell_fprintf(shell, SHELL_ERROR, fmt, ##__VA_ARGS__)
+
+  
+void Error_Handler()
+{
+    FATAL_ERROR("HAL Error_Handler()");
+}
 
 
 void motor_set_pwm( u32_t dev, u32_t value )
@@ -104,7 +111,9 @@ void main(void)
     dev = device_get_binding( DT_ALIAS_LED0_GPIOS_CONTROLLER );
     
     gpio_pin_configure(dev, DT_ALIAS_LED0_GPIOS_PIN, GPIO_DIR_OUT);
+    
     motor_init();
+    motor_pos_init();
     
     LOG_INF("Robot control task started!");
     while (1) 
@@ -112,7 +121,7 @@ void main(void)
       // Set pin to HIGH/LOW every 1 second */
       gpio_pin_write(dev, DT_ALIAS_LED0_GPIOS_PIN, cnt % 2);
       cnt++;
-      k_sleep( 500 );
+      k_sleep( 250 );
     }
 }
 
@@ -181,6 +190,24 @@ static int cmd_pwm_ramp(const struct shell *shell, size_t argc, char **argv)
 }
 
 
+
+static int cmd_pwm_count(const struct shell *shell, size_t argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+    
+    while(1)
+    {
+        u32_t left = 1 ;
+        u32_t right = 1 ;
+        
+        motor_pos_get( &left, &right );
+        SHE_INF("Counters are %u %u\n", left, right );
+         k_sleep( 100 );
+    }
+}
+
+
 static int cmd_pwm_set(const struct shell *shell, size_t argc, char **argv)
 {
    u32_t channel;
@@ -207,6 +234,7 @@ static int cmd_pwm_set(const struct shell *shell, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_pwm,
         SHELL_CMD_ARG(set, NULL, "set <channel> <period>", cmd_pwm_set, 3, 0 ),
         SHELL_CMD_ARG(ramp, NULL, "ramp <step> <sleep_ms>", cmd_pwm_ramp, 3, 0 ),
+        SHELL_CMD_ARG(count, NULL, "count", cmd_pwm_count, 1, 0 ),                       
         SHELL_SUBCMD_SET_END
 );
 /* Creating root (level 0) command "demo" */

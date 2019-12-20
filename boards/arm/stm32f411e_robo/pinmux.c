@@ -23,7 +23,12 @@ static const struct pin_config pinconf[] = {
        {STM32_PIN_PA1, (STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL) },
        {STM32_PIN_PA15, (STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL) },
 #endif /* CONFIG_PWM_STM32_4 */
-    
+
+//#ifdef CONFIG_SUPA_EXT_TIMERS
+       {STM32_PIN_PD2, (STM32_PINMUX_ALT_FUNC_2 | STM32_PUSHPULL_NOPULL) },
+       {STM32_PIN_PE0, (STM32_PINMUX_ALT_FUNC_2 | STM32_PUSHPULL_NOPULL) },
+//#endif /* CONFIG_PWM_STM32_4 */
+
 };
 
 static int pinmux_stm32_init(struct device *port)
@@ -31,7 +36,7 @@ static int pinmux_stm32_init(struct device *port)
 	ARG_UNUSED(port);
 
 	stm32_setup_pins(pinconf, ARRAY_SIZE(pinconf));
-
+   __HAL_RCC_GPIOE_CLK_ENABLE();
 	return 0;
 }
 

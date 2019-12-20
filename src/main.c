@@ -116,12 +116,17 @@ void main(void)
     motor_pos_init();
     
     LOG_INF("Robot control task started!");
+    float f;
+    
     while (1) 
     {
       // Set pin to HIGH/LOW every 1 second */
       gpio_pin_write(dev, DT_ALIAS_LED0_GPIOS_PIN, cnt % 2);
       cnt++;
       k_sleep( 250 );
+      f += 0.25f;
+      
+      printk("Got result:%d", (int)(f + 0.5) );
     }
 }
 

@@ -19,6 +19,7 @@ typedef enum
 
 typedef struct
 {
-   int32_t        params[2];
+   uint32_t       _fifo_reserved;
+   int32_t        params[3];
    Motor_cmd_type opcode; 
 } Motor_cmd;

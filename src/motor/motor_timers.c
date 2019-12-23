@@ -10,7 +10,7 @@ TIM_HandleTypeDef LOCAL_tim_right;
 #define HAL_CHECK(x) if ( (x) != HAL_OK) { FATAL_ERROR("HAL call failed!"); };
 #define PWM_TIM_PERIOD_CYCLES 1000
 
-LOG_MODULE_REGISTER( mot_tim );
+LOG_MODULE_REGISTER( motor_tim );
 
 
 
@@ -87,13 +87,46 @@ static void tim_counter_init(void)
 }
 
 
-
-void motor_timers_pos_get( uint32_t* left, uint32_t* right )
+static void pos_get( uint32_t* left, uint32_t* right )
 {
     (*left)  = __HAL_TIM_GET_COUNTER( &LOCAL_tim_left );
     (*right) = __HAL_TIM_GET_COUNTER( &LOCAL_tim_right );
     
 }
+
+uint32_t LOCAL_offset[2];
+
+static const float MOTOR_TICKS_TO_PWM = 1.0f;
+
+
+void motor_timers_set_speed( int motor, float speed_cm_per_sec )
+{
+   float pwm_target_f  = ( speed_cm_per_sec*MOTOR_TICKS_TO_PWM + 0.5f );
+   
+   if // WIP
+   uint32_t pwm_target = (uint32_t)pwm_target_f;
+   
+   if ( pwm_target >= PWM_TIM_PERIOD_CYCLES ) 
+   {
+       pwm_target = PWM_TIM_PERIOD_CYCLES;
+   }
+   
+   __HAL_TIM_SET_COMPARE(&LOCAL_tim_pwm, LOCAL_PWM_CHANNELS[ motor ], pwm_target );
+}
+
+
+void motor_timers_get_location( float* pos )
+{
+        
+}
+
+void motor_timers_set_location_zero( float* pos )
+{
+    pos_get( &LOCAL_offset[0], &LOCAL_offset[1] );
+    pos[0] = 0.0f;
+    pos[1] = 0.0f;
+}
+
 
 
 void motor_timers_init()
@@ -102,6 +135,4 @@ void motor_timers_init()
     tim_counter_init();
     LOG_INF("Motor timers init done");
 }
-
-
 

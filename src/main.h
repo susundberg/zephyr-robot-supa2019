@@ -13,7 +13,8 @@
    k_fatal_halt(0xFFFF); }
    
    
-   
+#define ASSERT(x) { if ( (x) == false ) { FATAL_ERROR("Assert failed" ); } };
+
 #define OS_DEFAULT_STACKSIZE 1024
 #define OS_DEFAULT_PRIORITY  7
 

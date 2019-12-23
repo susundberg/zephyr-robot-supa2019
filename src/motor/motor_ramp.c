@@ -1,7 +1,35 @@
 
 
 #include <math.h>
+
+#include "../main.h"
+
 #include "motor_ramp.h"
+
+LOG_MODULE_REGISTER( motor_ramp );
+
+#define MINDIFF 0.00001
+
+static float sqrtf(float square)
+{
+    float root, last, diff;
+
+    root = square / 3.0;
+    diff = 1;
+
+    if (square <= 0) {
+        return 0;
+    }
+
+    do {
+        last = root;
+        root = (root + square / root) / 2.0;
+        diff = root - last;
+    } while (diff > MINDIFF || diff < -MINDIFF);
+
+    return root;
+}
+
 
 
 static float motor_ramp_acc_solve_max_speed( float distance, float max_acc )
@@ -63,7 +91,7 @@ void motor_ramp_init( Motor_ramp* ramp, float max_acc, float max_speed, float di
     
     if ( dist_max_speed < max_speed )
     {
-        LOG_INFO("Cannot go full speed, limiting max speed to %d", (int)(dist_max_speed*100.0f));
+        LOG_INF("Cannot go full speed, limiting max speed to %d", (int)(dist_max_speed*100.0f));
         max_speed = dist_max_speed ;
         dist_const_speed = 0;
     }
@@ -71,7 +99,7 @@ void motor_ramp_init( Motor_ramp* ramp, float max_acc, float max_speed, float di
     {
         float ramp_dist = motor_ramp_acc_solve_distance( max_acc, max_speed );
         dist_const_speed = distance - 2*ramp_dist;
-        LOG_INFO("Full speed available it will take %d -> const dist %d", (int)(ramp_dist*100.0f), (int)(dist_const_speed*100.0f));
+        LOG_INF("Full speed available it will take %d -> const dist %d", (int)(ramp_dist*100.0f), (int)(dist_const_speed*100.0f));
         ASSERT( dist_const_speed >= 0.0f );
     }
     

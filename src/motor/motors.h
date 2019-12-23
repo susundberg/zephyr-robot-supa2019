@@ -3,6 +3,8 @@
 #include "../main.h"
 
 
+#define MOTOR_MAX_ACC_CM_SS   10.0   // cm per sec^2
+#define MOTOR_MAX_SPEED_CM_S  100.0  // cm per sec
 
 void motor_init();
 

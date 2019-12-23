@@ -5,12 +5,15 @@
 #include <logging/log.h>
 
 #include "motors.h"
+#include "motor_ramp.h"
+
 #include "../main.h"
 
 
 LOG_MODULE_REGISTER(motors);
 
 
+Motor_ramp LOCAL_target[2];
 
 struct k_fifo LOCAL_fifo;
 
@@ -18,7 +21,10 @@ struct k_fifo LOCAL_fifo;
 static void motor_cmd_drive( Motor_cmd* cmd )
 {
     LOG_INF("Drive %d %d", cmd->params[0], cmd->params[1] );
-    
+
+    motor_ramp_init( &LOCAL_target[0], MOTOR_MAX_ACC_CM_S, MOTOR_MAX_SPEED_CM_SS, cmd->params[0] );
+    motor_ramp_init( &LOCAL_target[1], MOTOR_MAX_ACC_CM_S, MOTOR_MAX_SPEED_CM_SS, cmd->params[1] );
+                     
 }
 
 static void motor_cmd_stop( Motor_cmd* cmd )

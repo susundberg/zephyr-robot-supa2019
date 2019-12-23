@@ -22,30 +22,30 @@ static float motor_ramp_acc_solve_time(  float max_acc, float speed_diff )
 }
 
 
-static float motor_ramp_acc_speed_i( MotorRampAcc* acc, float t)
+static float motor_ramp_acc_speed_i( Motor_ramp_acc* acc, float t)
 {
     return (1.0f/3.0f) * acc->const_A*(t*t*t) + acc->const_M * t;
 }
 
-static float motor_ramp_acc_location_i( MotorRampAcc* acc, float t)
+static float motor_ramp_acc_location_i( Motor_ramp_acc* acc, float t)
 {
    float t2 = t*t; 
    return (1.0f/12.0f)*acc->const_A*(t2*t2) + 0.5f*acc->const_M*(t2) - acc->const_B*t;
 }
 
-static float motor_ramp_acc_location( MotorRampAcc* acc, float t )
+static float motor_ramp_acc_location( Motor_ramp_acc* acc, float t )
 {
     t = t - acc->const_T;
     return motor_ramp_acc_location_i(acc,t) - acc->const_D;
 }
 
-// static float motor_ramp_acc_speed( MotorRampAcc* acc, float t )
+// static float motor_ramp_acc_speed( Motor_ramp_acc* acc, float t )
 // {
 //     t = t - acc->const_T;
 //     return motor_ramp_acc_speed_i( acc, t ) - acc->const_B;
 // }
 
-static void motor_ramp_acc_init( MotorRampAcc* acc, float max_acc, float speed_diff )
+static void motor_ramp_acc_init( Motor_ramp_acc* acc, float max_acc, float speed_diff )
 {
     acc->const_M = max_acc;
     acc->const_T = ( ( 3.0f * speed_diff ) / (4.0f * max_acc) ) ;
@@ -55,7 +55,7 @@ static void motor_ramp_acc_init( MotorRampAcc* acc, float max_acc, float speed_d
 }
 
 
-void motor_ramp_init( MotorRamp* ramp, float max_acc, float max_speed, float distance )
+void motor_ramp_init( Motor_ramp* ramp, float max_acc, float max_speed, float distance )
 {
     
     float dist_max_speed = motor_ramp_acc_solve_max_speed( distance, max_acc );
@@ -85,13 +85,13 @@ void motor_ramp_init( MotorRamp* ramp, float max_acc, float max_speed, float dis
         
 }
 
-float motor_ramp_fulltime( MotorRamp* ramp )
+float motor_ramp_fulltime( Motor_ramp* ramp )
 {
     return 2.0f*ramp->acc_ramp_time + ramp->const_ramp_time;
 }
 
 
-float motor_ramp_location( MotorRamp* ramp, float t )
+float motor_ramp_location( Motor_ramp* ramp, float t )
 {
     
     float loc = 0.0f;

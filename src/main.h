@@ -9,11 +9,13 @@
 
 
 #define FATAL_ERROR( fmt, ...) { \
-   printk( "FATAL: " # fmt, ##__VA_ARGS__ );\
+   printk( "FATAL %s:%d: " # fmt, __FILE__, __LINE__, ##__VA_ARGS__ );\
    k_fatal_halt(0xFFFF); }
    
    
    
-   
+#define OS_DEFAULT_STACKSIZE 1024
+#define OS_DEFAULT_PRIORITY  7
+
    
 

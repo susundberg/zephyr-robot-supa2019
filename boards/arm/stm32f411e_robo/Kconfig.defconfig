@@ -14,15 +14,19 @@ config UART_2
 	default y
 endif # UART_CONSOLE
 
+config USE_STM32_HAL_TIM
+    default y
+    
 config USE_STM32_HAL_TIM_EX
     default y
 
- 
 
-if PWM
-config PWM_STM32_2
-       default y
-endif # PWM
+ 
+# 
+# if PWM
+# config PWM_STM32_2
+#        default y
+# endif # PWM
 
 
 endif # BOARD_STM32F411E_ROBO

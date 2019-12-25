@@ -14,7 +14,7 @@
    
    
 #define ASSERT(x) { if ( (x) == false ) { FATAL_ERROR("Assert failed" ); } };
-
+#define ROUND_INT(x) ( (int)( x + 0.5) )
 #define UNLIKELY(expr) ( __builtin_expect(!!(expr), 0))
 
 #define OS_DEFAULT_STACKSIZE 1024

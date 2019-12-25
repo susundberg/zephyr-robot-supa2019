@@ -89,7 +89,7 @@ static int parse_i32(const char *str, int32_t *result)
 {
     long val;
 
-    if (parse_long(str, &val) || val > INT32_MIN || val < INT32_MIN ) 
+    if (parse_long(str, &val) || val < INT32_MIN || val > INT32_MAX ) 
     {
         return -EINVAL;
     }
@@ -125,16 +125,16 @@ static int cmd_motor_test(const struct shell *shell, size_t argc, char **argv)
     (void)argv;
     (void)shell;
 
-   int32_t params[2];
+   int32_t params[3];
    
-    if ( parse_i32(argv[1], &params[1]) || parse_i32(argv[2], &params[2] ) )
+    if ( parse_i32(argv[1], &params[0]) || parse_i32(argv[2], &params[1]) || parse_i32(argv[3], &params[2] ) )
     {
 
         SHE_ERR("Invalid arguments.\n");
         return -EINVAL;
     }
     
-    send_cmd( MOTOR_CMD_TEST, params, 2 );
+    send_cmd( MOTOR_CMD_TEST, params, 3 );
     return 0; 
 }
 
@@ -142,7 +142,7 @@ static int cmd_motor_drive(const struct shell *shell, size_t argc, char **argv)
 {
    int32_t params[2];
    
-    if ( parse_i32(argv[1], &params[1]) || parse_i32(argv[2], &params[2] ) )
+    if ( parse_i32(argv[1], &params[0]) || parse_i32(argv[2], &params[1] ) )
     {
 
         SHE_ERR("Invalid arguments.\n");
@@ -158,7 +158,7 @@ static int cmd_motor_drive(const struct shell *shell, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_pwm,
         SHELL_CMD_ARG(drive, NULL, "drive <dist_left> <dist_right>", cmd_motor_drive, 3, 0 ),
         SHELL_CMD_ARG(stop, NULL, "stop <>", cmd_motor_stop, 1, 0 ),
-        SHELL_CMD_ARG(test, NULL, "test <ramp_sec> <max_speed>", cmd_motor_test, 3, 0 ),
+        SHELL_CMD_ARG(test, NULL, "test <time_ramp_sec> <time_const_sec> <max_speed cm/sec>", cmd_motor_test, 4, 0 ),
 
         SHELL_SUBCMD_SET_END
 );

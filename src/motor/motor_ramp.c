@@ -8,27 +8,27 @@
 
 LOG_MODULE_REGISTER( motor_ramp );
 
-#define MINDIFF 0.00001
-
-static float sqrtf(float square)
-{
-    float root, last, diff;
-
-    root = square / 3.0;
-    diff = 1;
-
-    if (square <= 0) {
-        return 0;
-    }
-
-    do {
-        last = root;
-        root = (root + square / root) / 2.0;
-        diff = root - last;
-    } while (diff > MINDIFF || diff < -MINDIFF);
-
-    return root;
-}
+// #define MINDIFF 0.00001
+// 
+// static float sqrtf(float square)
+// {
+//     float root, last, diff;
+// 
+//     root = square / 3.0;
+//     diff = 1;
+// 
+//     if (square <= 0) {
+//         return 0;
+//     }
+// 
+//     do {
+//         last = root;
+//         root = (root + square / root) / 2.0;
+//         diff = root - last;
+//     } while (diff > MINDIFF || diff < -MINDIFF);
+// 
+//     return root;
+// }
 
 
 

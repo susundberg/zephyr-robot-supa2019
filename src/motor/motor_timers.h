@@ -12,3 +12,4 @@ void motor_timers_get_location( float* loc );
 void motor_control_init();
 void motor_control_enable( int motor, bool reverse );
 void motor_control_disable( int motor );
+void motor_control_disable_all();

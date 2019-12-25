@@ -34,6 +34,81 @@ Motor_state GLOBAL_motor_state;
 static void motor_cmd_stop( Motor_cmd* cmd )
 {
     (void)(cmd);
+    motor_control_disable_all();
+    
+}
+
+
+static void motor_cmd_test( Motor_cmd* cmd )
+{
+    s64_t drive_start_ticks;
+    float position_cm[2];
+    float pos_old[2] = { 0.0f, 0.0f };
+    motor_timers_set_location_zero( position_cm );
+    
+    
+    drive_start_ticks = k_uptime_get();
+    
+    float const_start = cmd->params[0];
+    float const_stop  = const_start + cmd->params[1];
+    float all_done    = const_stop + cmd->params[0];
+    
+    
+    float const_speed = cmd->params[2];
+    float acc_ramp = cmd->params[2] / cmd->params[0];
+    
+    LOG_INF("Acceleration ramp %0.1f s  const %0.1f s  -> const speed: %0.1f cm/sec acc: %0.1f cm/sec^2", 
+            const_start, const_stop - const_start,  const_speed, acc_ramp );
+
+    const float time_diff_sec = 0.1;
+    
+    while(1)
+    {
+        k_sleep( time_diff_sec * 1000 );
+        
+        // Get new location
+        s64_t milliseconds_spent = k_uptime_delta(&drive_start_ticks); 
+        float time_sec = milliseconds_spent / 1000.0f;
+        
+        float speed_target;
+        float speed_obs[2];
+        
+        if ( time_sec < const_start )
+        {
+            speed_target = time_sec * acc_ramp;
+        }
+        else if ( time_sec >= const_start && time_sec < const_stop )
+        {
+            speed_target = const_speed;
+        }
+        else if ( time_sec >= const_stop && time_sec < all_done )
+        {
+            float ramp_time = time_sec  - const_stop;
+            speed_target = const_speed - ramp_time*acc_ramp;
+        }
+        else
+        {
+            LOG_INF("Motor test ramp done, bail out!");
+            break;
+        }
+        
+        motor_timers_get_location( position_cm );
+        
+        for ( int loop = 0; loop < 2; loop ++ )
+        {
+           speed_obs[loop] = ( position_cm[loop]  - pos_old[loop] ) / time_diff_sec;
+           motor_timers_set_speed( loop, speed_target );
+        }
+        
+        memcpy( pos_old, position_cm, sizeof(float)*2 );
+        
+        LOG_INF("T=%0.1f - pos: %0.1f %0.1f -- speed: %0.1f %0.1f - target: %0.1f", time_sec, position_cm[0], position_cm[1], speed_obs[0], speed_obs[1], speed_target ); 
+    }
+    
+    LOG_INF("Final position: %0.1f %0.1f", position_cm[0], position_cm[1] ); 
+    motor_cmd_stop(NULL);
+        
+     
 }
 
 
@@ -41,7 +116,7 @@ static void motor_cmd_drive( Motor_cmd* cmd )
 {
     static Motor_ramp LOCAL_target[2];
     s64_t LOCAL_drive_start;
-    float LOCAL_pos_cm[2];
+    float position_cm[2];
     
 
     uint32_t flags = (uint32_t) cmd->params[2];
@@ -64,7 +139,7 @@ static void motor_cmd_drive( Motor_cmd* cmd )
             
     
     
-    motor_timers_set_location_zero( LOCAL_pos_cm );
+    motor_timers_set_location_zero( position_cm );
     
     LOCAL_drive_start = k_uptime_get();
     
@@ -83,12 +158,12 @@ static void motor_cmd_drive( Motor_cmd* cmd )
             break;
         }
         
-        motor_timers_get_location( LOCAL_pos_cm );
+        motor_timers_get_location( position_cm );
         
         for ( int loop = 0; loop < 2; loop ++ )
         {
             float pos_cm   = motor_ramp_location( &LOCAL_target[loop], time_sec );
-            float speed_cm_per_sec = (pos_cm - LOCAL_pos_cm[loop])*MOTOR_CONTROL_LOOP_MS_P1;
+            float speed_cm_per_sec = (pos_cm - position_cm[loop])*MOTOR_CONTROL_LOOP_MS_P1;
 
             if ( speed_cm_per_sec > MOTOR_MAX_CONTROL_SPEED_CM_PER_SEC || speed_cm_per_sec < -MOTOR_MAX_CONTROL_SPEED_CM_PER_SEC )
             {
@@ -140,6 +215,12 @@ void motors_main()
                 GLOBAL_motor_state = MOTOR_STATUS_IDLE;
                 break;
                 
+            case MOTOR_CMD_TEST:
+                GLOBAL_motor_state = MOTOR_STATUS_DRIVE;
+                motor_cmd_test( cmd );
+                GLOBAL_motor_state = MOTOR_STATUS_IDLE;
+                break;
+
             case MOTOR_CMD_STOP:
                 motor_cmd_stop( cmd );
                 GLOBAL_motor_state = MOTOR_STATUS_IDLE;

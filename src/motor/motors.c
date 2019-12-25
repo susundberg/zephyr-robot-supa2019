@@ -89,7 +89,7 @@ static void motor_cmd_drive( Motor_cmd* cmd )
         {
             float pos_cm   = motor_ramp_location( &LOCAL_target[loop], time_sec );
             float speed_cm_per_sec = (pos_cm - LOCAL_pos_cm[loop])*MOTOR_CONTROL_LOOP_MS_P1;
-            
+
             if ( speed_cm_per_sec > MOTOR_MAX_CONTROL_SPEED_CM_PER_SEC || speed_cm_per_sec < -MOTOR_MAX_CONTROL_SPEED_CM_PER_SEC )
             {
                 FATAL_ERROR("Motor %d speed invalid %d!", loop, (int)speed_cm_per_sec );

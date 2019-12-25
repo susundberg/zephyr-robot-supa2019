@@ -10,10 +10,14 @@ TIM_HandleTypeDef LOCAL_tim_right;
 #define HAL_CHECK(x) if ( (x) != HAL_OK) { FATAL_ERROR("HAL call failed!"); };
 #define PWM_TIM_PERIOD_CYCLES 1000
 
+static const float MOTOR_TICKS_TO_CM = 0.001f;
+static const float MOTOR_CM_PER_SEC_TO_PWM = 1.0f;
+
+
 LOG_MODULE_REGISTER( motor_tim );
 
 
-
+uint32_t LOCAL_pwm_channels[2] = { TIM_CHANNEL_1, TIM_CHANNEL_2 };
 
 /* TIM2 init function */
 static void tim_pwm_init(void)
@@ -40,11 +44,11 @@ static void tim_pwm_init(void)
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   
-  HAL_CHECK(HAL_TIM_PWM_ConfigChannel(&LOCAL_tim_pwm, &sConfigOC, TIM_CHANNEL_1) );
-  HAL_CHECK(HAL_TIM_PWM_ConfigChannel(&LOCAL_tim_pwm, &sConfigOC, TIM_CHANNEL_2) );
-  
-  HAL_CHECK( HAL_TIM_PWM_Start( &LOCAL_tim_pwm, TIM_CHANNEL_1 ) );
-  HAL_CHECK( HAL_TIM_PWM_Start( &LOCAL_tim_pwm, TIM_CHANNEL_2 ) );
+  for ( int loop = 0; loop < 2; loop ++ )
+  {
+     HAL_CHECK( HAL_TIM_PWM_ConfigChannel(&LOCAL_tim_pwm, &sConfigOC, LOCAL_pwm_channels[ loop ] ) );
+     HAL_CHECK( HAL_TIM_PWM_Start( &LOCAL_tim_pwm, LOCAL_pwm_channels[ loop ] ) );   
+  }
 }
 
 
@@ -87,42 +91,71 @@ static void tim_counter_init(void)
 }
 
 
-static void pos_get( uint32_t* left, uint32_t* right )
+static void pos_get( uint32_t* pos )
 {
-    (*left)  = __HAL_TIM_GET_COUNTER( &LOCAL_tim_left );
-    (*right) = __HAL_TIM_GET_COUNTER( &LOCAL_tim_right );
+    pos[0] = __HAL_TIM_GET_COUNTER( &LOCAL_tim_left );
+    pos[1] = __HAL_TIM_GET_COUNTER( &LOCAL_tim_right );
     
 }
 
 uint32_t LOCAL_offset[2];
 
-static const float MOTOR_TICKS_TO_PWM = 1.0f;
 
 
-void motor_timers_set_speed( int motor, float speed_cm_per_sec )
+void motor_timers_set_speed( uint32_t motor, float speed_cm_per_sec )
 {
-   float pwm_target_f  = ( speed_cm_per_sec*MOTOR_TICKS_TO_PWM + 0.5f );
+   float pwm_target_f  = ( speed_cm_per_sec*MOTOR_CM_PER_SEC_TO_PWM + 0.5f );
    
-   if // WIP
-   uint32_t pwm_target = (uint32_t)pwm_target_f;
+   ASSERT( motor < 2 );
    
-   if ( pwm_target >= PWM_TIM_PERIOD_CYCLES ) 
+   uint32_t pwm_target = 0;
+   
+   if UNLIKELY( pwm_target_f >= PWM_TIM_PERIOD_CYCLES ) 
    {
        pwm_target = PWM_TIM_PERIOD_CYCLES;
    }
+   else if UNLIKELY( pwm_target_f <= 0 )
+   {
+       pwm_target = 0;
+   }
+   else
+   {
+       pwm_target = (uint32_t)pwm_target_f;
+   }
    
-   __HAL_TIM_SET_COMPARE(&LOCAL_tim_pwm, LOCAL_PWM_CHANNELS[ motor ], pwm_target );
+   __HAL_TIM_SET_COMPARE( &LOCAL_tim_pwm, LOCAL_pwm_channels[ motor ], pwm_target );
 }
 
 
 void motor_timers_get_location( float* pos )
 {
+     uint32_t tim_now[2];
+     pos_get( tim_now );
+     for ( int loop = 0; loop < 2; loop ++ )
+     {
+        uint32_t count_add;
         
+        if ( tim_now[loop] < LOCAL_offset[loop] )
+        {
+            
+            count_add = tim_now[loop] + (0xFFFF - LOCAL_offset[loop]);
+            
+        }
+        else
+        {
+            count_add = LOCAL_offset[loop] - tim_now[loop];
+        }
+        
+        LOCAL_offset[loop] = tim_now[loop];
+        
+        
+        pos[loop] += count_add * MOTOR_TICKS_TO_CM;
+     }
 }
 
 void motor_timers_set_location_zero( float* pos )
 {
-    pos_get( &LOCAL_offset[0], &LOCAL_offset[1] );
+    pos_get( LOCAL_offset );
     pos[0] = 0.0f;
     pos[1] = 0.0f;
 }

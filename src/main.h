@@ -15,6 +15,8 @@
    
 #define ASSERT(x) { if ( (x) == false ) { FATAL_ERROR("Assert failed" ); } };
 
+#define UNLIKELY(expr) ( __builtin_expect(!!(expr), 0))
+
 #define OS_DEFAULT_STACKSIZE 1024
 #define OS_DEFAULT_PRIORITY  7
 

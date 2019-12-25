@@ -99,32 +99,67 @@ static int parse_i32(const char *str, int32_t *result)
 
 
 
-
-static int cmd_motor_drive(const struct shell *shell, size_t argc, char **argv)
+static void send_cmd( uint32_t opcode, uint32_t* params, uint32_t nparams )
 {
-   int32_t left;
-   int32_t right;
+    Motor_cmd* cmd = k_malloc( sizeof(Motor_cmd) );
+    memset( cmd, 0x00, sizeof( sizeof(Motor_cmd) ) ) ;
+    cmd->opcode = opcode;
+    memcpy( cmd->params, params, nparams*sizeof(uint32_t));
+    k_fifo_put( &GLOBAL_motor_fifo, cmd );
+    
+}
+
+static int cmd_motor_stop(const struct shell *shell, size_t argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+    (void)shell;
+    send_cmd( MOTOR_CMD_STOP, NULL, 0 );
+    return 0; 
+}
+
+
+static int cmd_motor_test(const struct shell *shell, size_t argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+    (void)shell;
+
+   int32_t params[2];
    
-    if ( parse_i32(argv[1], &left) || parse_i32(argv[2], &right) )
+    if ( parse_i32(argv[1], &params[1]) || parse_i32(argv[2], &params[2] ) )
     {
 
         SHE_ERR("Invalid arguments.\n");
         return -EINVAL;
     }
     
-    Motor_cmd* cmd = k_malloc( sizeof(Motor_cmd) );
-    memset( cmd, 0x00, sizeof( sizeof(Motor_cmd) ) ) ;
+    send_cmd( MOTOR_CMD_TEST, params, 2 );
+    return 0; 
+}
+
+static int cmd_motor_drive(const struct shell *shell, size_t argc, char **argv)
+{
+   int32_t params[2];
+   
+    if ( parse_i32(argv[1], &params[1]) || parse_i32(argv[2], &params[2] ) )
+    {
+
+        SHE_ERR("Invalid arguments.\n");
+        return -EINVAL;
+    }
     
-    cmd->opcode = MOTOR_CMD_DRIVE;
-    cmd->params[0] = left;
-    cmd->params[1] = right;
-    k_fifo_put( &GLOBAL_motor_fifo, cmd );
+    send_cmd( MOTOR_CMD_DRIVE, params, 2 );
     return 0; 
 }
 
 
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_pwm,
         SHELL_CMD_ARG(drive, NULL, "drive <dist_left> <dist_right>", cmd_motor_drive, 3, 0 ),
+        SHELL_CMD_ARG(stop, NULL, "stop <>", cmd_motor_stop, 1, 0 ),
+        SHELL_CMD_ARG(test, NULL, "test <ramp_sec> <max_speed>", cmd_motor_test, 3, 0 ),
+
         SHELL_SUBCMD_SET_END
 );
 /* Creating root (level 0) command "demo" */

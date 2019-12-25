@@ -5,7 +5,7 @@
 void motor_timers_init();
 // void motor_timers_pos_get( uint32_t* left, uint32_t* right );
 
-void motor_timers_set_speed( int motor, float speed_cm_per_sec );
+void motor_timers_set_speed( uint32_t motor, float speed_cm_per_sec );
 void motor_timers_set_location_zero( float* loc );
 void motor_timers_get_location( float* loc );
 

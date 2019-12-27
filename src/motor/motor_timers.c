@@ -130,26 +130,26 @@ void motor_timers_set_speed( uint32_t motor, float speed_cm_per_sec )
 void motor_timers_get_location( float* pos )
 {
      uint32_t tim_now[2];
+     
      pos_get( tim_now );
+     
      for ( int loop = 0; loop < 2; loop ++ )
      {
         uint32_t count_add;
+
         
         if ( tim_now[loop] < LOCAL_offset[loop] )
         {
-            
             count_add = tim_now[loop] + (0xFFFF - LOCAL_offset[loop]);
-            
         }
-        else
+        else // tim_now >= local_offset
         {
-            count_add = LOCAL_offset[loop] - tim_now[loop];
+            count_add = tim_now[loop] - LOCAL_offset[loop];
         }
         
         LOCAL_offset[loop] = tim_now[loop];
-        
-        
-        pos[loop] += count_add * MOTOR_TICKS_TO_CM;
+        printk("POS %d %d %d\n", LOCAL_offset[loop], tim_now[loop], count_add );      
+        pos[loop] += (count_add * MOTOR_TICKS_TO_CM);
      }
 }
 

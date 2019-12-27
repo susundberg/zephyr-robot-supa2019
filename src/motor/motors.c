@@ -114,6 +114,7 @@ static void motor_cmd_test( Motor_cmd* cmd )
         k_sleep( time_diff_sec * 1000 );
         
         
+        motor_timers_get_location( position_cm );
         
         for ( int loop = 0; loop < 2; loop ++ )
            speed_obs[loop] = ( position_cm[loop]  - pos_old[loop] ) / time_diff_sec;
@@ -210,6 +211,7 @@ void motors_main()
     k_fifo_init(&GLOBAL_motor_fifo);
     
     motor_timers_init();
+    motor_control_init();
     
     LOG_INF("Motor app started!");
     

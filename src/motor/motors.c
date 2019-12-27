@@ -78,6 +78,9 @@ static void motor_cmd_test( Motor_cmd* cmd )
 
     const float time_diff_sec = 0.1;
     
+    for ( int loop = 0; loop < 2; loop ++ )
+       motor_control_enable( loop, false );
+    
     while(1)
     {
         

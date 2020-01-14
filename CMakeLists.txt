@@ -8,4 +8,5 @@ include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 
 project(SUPA_ROB)
 
-target_sources(app PRIVATE src/main.c src/motors.c )
+file(GLOB_RECURSE app_sources "src/*.c" )
+target_sources(app PRIVATE ${app_sources} )

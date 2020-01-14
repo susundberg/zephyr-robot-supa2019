@@ -11,7 +11,7 @@ TIM_HandleTypeDef LOCAL_tim_right;
 #define PWM_TIM_PERIOD_CYCLES 1000
 
 static const float MOTOR_TICKS_TO_CM = 0.001f;
-static const float MOTOR_CM_PER_SEC_TO_PWM = 1.0f;
+static const float MOTOR_CM_PER_SEC_TO_PWM = 100.0f;
 
 
 LOG_MODULE_REGISTER( motor_tim );
@@ -28,7 +28,7 @@ static void tim_pwm_init(void)
   __HAL_RCC_TIM2_CLK_ENABLE();
   
   LOCAL_tim_pwm.Instance = TIM2;
-  LOCAL_tim_pwm.Init.Prescaler     = 250; // Clock is 50 000 Khz / 250 -> 200 khz
+  LOCAL_tim_pwm.Init.Prescaler     = 500; // Clock is 100 000 Khz / 500 -> 200 khz
   LOCAL_tim_pwm.Init.CounterMode   = TIM_COUNTERMODE_UP;
   LOCAL_tim_pwm.Init.Period        = PWM_TIM_PERIOD_CYCLES;
   LOCAL_tim_pwm.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;

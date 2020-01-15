@@ -14,6 +14,7 @@
 
 LOG_MODULE_REGISTER(motor);
 
+extern struct k_fifo GLOBAL_motor_fifo;
 
 
 typedef enum
@@ -27,10 +28,8 @@ typedef enum
 #define MOTOR_CONTROL_LOOP_MS 10
 static const float MOTOR_CONTROL_LOOP_MS_P1 = 1000.0f / MOTOR_CONTROL_LOOP_MS;
 #define MOTOR_MAX_CONTROL_SPEED_CM_PER_SEC 1000.0f
-
 struct k_fifo GLOBAL_motor_fifo;
 Motor_state GLOBAL_motor_state;
-
 
 static void motor_cmd_stop( Motor_cmd* cmd )
 {
@@ -205,6 +204,15 @@ static void motor_cmd_drive( Motor_cmd* cmd )
 }
 
 
+void motors_send_cmd( uint32_t opcode, uint32_t* params, uint32_t nparams )
+{
+    Motor_cmd* cmd = k_malloc( sizeof(Motor_cmd) );
+    memset( cmd, 0x00, sizeof( sizeof(Motor_cmd) ) ) ;
+    cmd->opcode = opcode;
+    memcpy( cmd->params, params, nparams*sizeof(uint32_t));
+    k_fifo_put( &GLOBAL_motor_fifo, cmd );
+    
+}
 
 void motors_main()
 {

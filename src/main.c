@@ -99,22 +99,14 @@ static int parse_i32(const char *str, int32_t *result)
 
 
 
-static void send_cmd( uint32_t opcode, uint32_t* params, uint32_t nparams )
-{
-    Motor_cmd* cmd = k_malloc( sizeof(Motor_cmd) );
-    memset( cmd, 0x00, sizeof( sizeof(Motor_cmd) ) ) ;
-    cmd->opcode = opcode;
-    memcpy( cmd->params, params, nparams*sizeof(uint32_t));
-    k_fifo_put( &GLOBAL_motor_fifo, cmd );
-    
-}
+
 
 static int cmd_motor_stop(const struct shell *shell, size_t argc, char **argv)
 {
     (void)argc;
     (void)argv;
     (void)shell;
-    send_cmd( MOTOR_CMD_STOP, NULL, 0 );
+    motors_send_cmd( MOTOR_CMD_STOP, NULL, 0 );
     return 0; 
 }
 
@@ -134,7 +126,7 @@ static int cmd_motor_test(const struct shell *shell, size_t argc, char **argv)
         return -EINVAL;
     }
     
-    send_cmd( MOTOR_CMD_TEST, params, 3 );
+    motors_send_cmd( MOTOR_CMD_TEST, params, 3 );
     return 0; 
 }
 
@@ -149,7 +141,7 @@ static int cmd_motor_drive(const struct shell *shell, size_t argc, char **argv)
         return -EINVAL;
     }
     
-    send_cmd( MOTOR_CMD_DRIVE, params, 2 );
+    motors_send_cmd( MOTOR_CMD_DRIVE, params, 2 );
     return 0; 
 }
 

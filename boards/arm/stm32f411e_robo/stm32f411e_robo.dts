@@ -18,6 +18,18 @@
 		zephyr,flash = &flash0;
 	};
 	
+	ir_receiver 
+	{
+	   compatible = "gpio-leds";
+	   ir_output: ir_output {
+			gpios = <&gpiod 15 GPIO_INT_ACTIVE_HIGH>;
+			label = "ir output"; // Also led blue
+	   };
+	   ir_input: ir_input {
+			gpios = <&gpioc 6 GPIO_INT_ACTIVE_HIGH>;
+			label = "ir input"; 
+	   };
+	};
 	
 	motor_control
 	{

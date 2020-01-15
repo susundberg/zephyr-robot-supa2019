@@ -20,6 +20,10 @@ config USE_STM32_HAL_TIM
 config USE_STM32_HAL_TIM_EX
     default y
 
+config USE_STM32_HAL_CORTEX
+    default y
+    
+
 
  
 # 

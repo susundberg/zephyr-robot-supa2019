@@ -9,11 +9,12 @@
 
 
 #define FATAL_ERROR( fmt, ...) { \
-   printk( "FATAL %s:%d: " # fmt, __FILE__, __LINE__, ##__VA_ARGS__ );\
-   k_fatal_halt(0xFFFF); }
-   
-   
-#define ASSERT(x) { if ( (x) == false ) { FATAL_ERROR("Assert failed" ); } };
+   __ASSERT( 0,  "FATAL %s:%d: " # fmt, __FILE__, __LINE__, ##__VA_ARGS__  ); }
+#define ASSERT_ISR(x) { if ( (x) == false ) { __ASSERT(0, "ASS ISR %s:%d", __FILE__ , __LINE__ ); } };
+#define ASSERT(x) { if ( (x) == false ) { __ASSERT(0, "ASS %s:%d", __FILE__ , __LINE__ ); } };
+
+#define HAL_CHECK(x) if ( (x) != HAL_OK) { FATAL_ERROR("HAL call failed!"); };
+
 #define ROUND_INT(x) ( (int)( x + 0.5) )
 #define UNLIKELY(expr) ( __builtin_expect(!!(expr), 0))
 

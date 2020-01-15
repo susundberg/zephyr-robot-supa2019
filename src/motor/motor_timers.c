@@ -3,11 +3,10 @@
 #include "motors.h"
 
 
-TIM_HandleTypeDef LOCAL_tim_pwm;
-TIM_HandleTypeDef LOCAL_tim_left;
-TIM_HandleTypeDef LOCAL_tim_right;
+static TIM_HandleTypeDef LOCAL_tim_pwm;
+static TIM_HandleTypeDef LOCAL_tim_left;
+static TIM_HandleTypeDef LOCAL_tim_right;
 
-#define HAL_CHECK(x) if ( (x) != HAL_OK) { FATAL_ERROR("HAL call failed!"); };
 #define PWM_TIM_PERIOD_CYCLES 1000
 
 static const float MOTOR_TICKS_TO_CM = 0.001f;
@@ -17,7 +16,7 @@ static const float MOTOR_CM_PER_SEC_TO_PWM = 100.0f;
 LOG_MODULE_REGISTER( motor_tim );
 
 
-uint32_t LOCAL_pwm_channels[2] = { TIM_CHANNEL_1, TIM_CHANNEL_2 };
+static const uint32_t LOCAL_pwm_channels[2] = { TIM_CHANNEL_1, TIM_CHANNEL_2 };
 
 /* TIM2 init function */
 static void tim_pwm_init(void)
@@ -28,7 +27,7 @@ static void tim_pwm_init(void)
   __HAL_RCC_TIM2_CLK_ENABLE();
   
   LOCAL_tim_pwm.Instance = TIM2;
-  LOCAL_tim_pwm.Init.Prescaler     = 500; // Clock is 100 000 Khz / 500 -> 200 khz
+  LOCAL_tim_pwm.Init.Prescaler     = 499; // Clock is 100 000 Khz / 500 -> 200 khz
   LOCAL_tim_pwm.Init.CounterMode   = TIM_COUNTERMODE_UP;
   LOCAL_tim_pwm.Init.Period        = PWM_TIM_PERIOD_CYCLES;
   LOCAL_tim_pwm.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;

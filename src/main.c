@@ -25,7 +25,7 @@
 #include <shell/shell_uart.h>
 
 #include "motor/motors.h"
-
+#include "ir_receiver/ir_receiver.h"
 
 LOG_MODULE_REGISTER(app);
 
@@ -37,6 +37,8 @@ LOG_MODULE_REGISTER(app);
   shell_fprintf(shell, SHELL_ERROR, fmt, ##__VA_ARGS__)
 
   
+void ircmd_move( IR_keycode code, bool repeated );
+
 
 
 void main(void)
@@ -48,6 +50,11 @@ void main(void)
     gpio_pin_configure(dev, DT_ALIAS_LED0_GPIOS_PIN, GPIO_DIR_OUT);
     
     
+    ir_receiver_register( KEY_VOL_UP, ircmd_move );
+    ir_receiver_register( KEY_VOL_DOWN, ircmd_move );
+    ir_receiver_register( KEY_LEFT, ircmd_move);
+    ir_receiver_register( KEY_RIGHT, ircmd_move );    
+    
     LOG_INF("Robot control task started!");
     while (1) 
     {
@@ -57,64 +64,54 @@ void main(void)
     }
 }
 
-static int parse_long(const char *str, long int *result)
+
+
+void ircmd_move( IR_keycode code, bool repeated )
 {
-    char *end;
-    long int val;
-
-    val = strtol(str, &end, 0);
-
-    if (*str == '\0' || *end != '\0') {
-        return -EINVAL;
-    }
-
-    *result = val;
-    return 0;
-}
-
-
-static int parse_u32(const char *str, u32_t *result)
-{
-    long val;
-
-    if (parse_long(str, &val) || val > UINT32_MAX || val < 0 ) 
-    {
-        return -EINVAL;
-    }
-    *result = (u32_t)val;
-    return 0;
-}
-
-static int parse_i32(const char *str, int32_t *result)
-{
-    long val;
-
-    if (parse_long(str, &val) || val < INT32_MIN || val > INT32_MAX ) 
-    {
-        return -EINVAL;
-    }
-    *result = (int32_t)val;
-    return 0;
-}
-
-
-
-static void send_cmd( uint32_t opcode, uint32_t* params, uint32_t nparams )
-{
-    Motor_cmd* cmd = k_malloc( sizeof(Motor_cmd) );
-    memset( cmd, 0x00, sizeof( sizeof(Motor_cmd) ) ) ;
-    cmd->opcode = opcode;
-    memcpy( cmd->params, params, nparams*sizeof(uint32_t));
-    k_fifo_put( &GLOBAL_motor_fifo, cmd );
+    int32_t params[2];    
     
+    static const int MOTOR_TEST_TURN_DISTANCE = 10.0;
+    static const int MOTOR_TEST_DRIVE_DISTANCE = 20.0;
+    
+    if (repeated)
+        return;
+    
+    switch (code)
+    {
+        case KEY_VOL_UP:
+            params[0] = MOTOR_TEST_DRIVE_DISTANCE;
+            params[1] = MOTOR_TEST_DRIVE_DISTANCE;
+            break;
+        case KEY_VOL_DOWN:
+            params[0] = -MOTOR_TEST_DRIVE_DISTANCE;
+            params[1] = -MOTOR_TEST_DRIVE_DISTANCE;
+            break;            
+        case KEY_LEFT:
+            params[0] = -MOTOR_TEST_TURN_DISTANCE;
+            params[1] = +MOTOR_TEST_TURN_DISTANCE;
+            break;        
+        case KEY_RIGHT:
+            params[0] = +MOTOR_TEST_TURN_DISTANCE;
+            params[1] = -MOTOR_TEST_TURN_DISTANCE;
+            break; 
+        default:
+            ASSERT(0);
+            return;
+    }
+    motors_send_cmd( MOTOR_CMD_DRIVE, params, 2 );
 }
+
+void ircmd_move_back( IR_keycode code, bool repeated );
+void ircmd_move_left( IR_keycode code, bool repeated );
+void ircmd_move_right( IR_keycode code, bool repeated );
+
 
 static int cmd_motor_stop(const struct shell *shell, size_t argc, char **argv)
 {
     (void)argc;
     (void)argv;
     (void)shell;
-    send_cmd( MOTOR_CMD_STOP, NULL, 0 );
+    motors_send_cmd( MOTOR_CMD_STOP, NULL, 0 );
     return 0; 
 }
 
@@ -134,7 +131,7 @@ static int cmd_motor_test(const struct shell *shell, size_t argc, char **argv)
         return -EINVAL;
     }
     
-    send_cmd( MOTOR_CMD_TEST, params, 3 );
+    motors_send_cmd( MOTOR_CMD_TEST, params, 3 );
     return 0; 
 }
 
@@ -149,7 +146,7 @@ static int cmd_motor_drive(const struct shell *shell, size_t argc, char **argv)
         return -EINVAL;
     }
     
-    send_cmd( MOTOR_CMD_DRIVE, params, 2 );
+    motors_send_cmd( MOTOR_CMD_DRIVE, params, 2 );
     return 0; 
 }
 

@@ -9,7 +9,7 @@
 
 void motor_init();
 
-extern struct k_fifo GLOBAL_motor_fifo;
+void motors_send_cmd( uint32_t opcode, uint32_t* params, uint32_t nparams );
 
 typedef enum
 {

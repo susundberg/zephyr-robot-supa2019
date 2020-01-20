@@ -27,8 +27,11 @@
 #include <shell/shell.h>
 #include <shell/shell_uart.h>
 
+#define SUPA_MODULE "mai"
+#include "main.h"
 #include "motor/motors.h"
 #include "ir_receiver/ir_receiver.h"
+#include "utils/utils.h"
 
 LOG_MODULE_REGISTER(app);
 
@@ -40,6 +43,12 @@ LOG_MODULE_REGISTER(app);
   shell_fprintf(shell, SHELL_ERROR, fmt, ##__VA_ARGS__)
 
   
+void supa_fatal_handler( const char* module, int line )
+{
+    printk("\nFATAL ERROR %s:%d\n", module, line );
+    k_sys_fatal_error_handler(0xFFFF, NULL );
+}
+  
 void ircmd_move( IR_keycode code, bool repeated );
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
@@ -47,7 +56,6 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
     ARG_UNUSED(esf);
     motor_abort();
     LOG_PANIC();
-    LOG_ERR("Halting system");
     k_fatal_halt( reason );
     CODE_UNREACHABLE;
 }

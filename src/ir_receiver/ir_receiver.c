@@ -3,6 +3,8 @@
 
 #include <drivers/gpio.h>
 
+#define SUPA_MODULE "irc"
+
 #include "ir_receiver.h"
 
 LOG_MODULE_REGISTER(ir);

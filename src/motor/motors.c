@@ -1,15 +1,15 @@
 #include <zephyr.h>
 #include <math.h>
 
-#include <drivers/pwm.h>
 #include <drivers/gpio.h>
 #include <logging/log.h>
 
+#define SUPA_MODULE "mom"
+
+#include "../main.h"
 #include "motors.h"
 #include "motor_ramp.h"
 #include "motor_timers.h"
-
-#include "../main.h"
 
 
 LOG_MODULE_REGISTER(motor);

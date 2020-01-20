@@ -1,5 +1,6 @@
 #include <drivers/gpio.h>
 
+#define SUPA_MODULE "moc"
 #include "../main.h"
 #include "motor_timers.h"
 
@@ -24,13 +25,13 @@ void motor_control_init()
        
        if ( LOCAL_dev[loop] == NULL )
        {
-           FATAL_ERROR("Cannot find device: %s", LOCAL_names[loop] );
+           FATAL_ERROR("NODEV: %s", LOCAL_names[loop] );
            return;
        }
        
        if ( gpio_pin_configure( LOCAL_dev[loop], LOCAL_pins[loop], GPIO_DIR_OUT) != 0 )
        {
-           FATAL_ERROR("Cannot configure device: %s-%d", LOCAL_names[loop], LOCAL_pins[loop] );
+           FATAL_ERROR("NOCONF: %s-%d", LOCAL_names[loop], LOCAL_pins[loop] );
            return;
        }
        

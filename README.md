@@ -31,8 +31,8 @@ Motor related
 
 | Function        |    Pin           |   Info  |
 | --------------- | ---------------- | ----- |
-| IR-Sensor       | PB3 - ISR3       | (blu) |
-| Emergency stop  | PB4 - ISR4       |  |
+| IR-Sensor       |  PA2 - ISR2       | (blu) |
+| Emergency stop  |  PA1 - ISR1       |  |
 
 **Big motor**
 

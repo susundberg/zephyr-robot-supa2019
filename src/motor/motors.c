@@ -31,6 +31,11 @@ static const float MOTOR_CONTROL_LOOP_MS_P1 = 1000.0f / MOTOR_CONTROL_LOOP_MS;
 struct k_fifo GLOBAL_motor_fifo;
 Motor_state GLOBAL_motor_state;
 
+void motor_abort()
+{
+    motor_timers_abort();
+}
+
 static void motor_cmd_stop( Motor_cmd* cmd )
 {
     (void)(cmd);

@@ -9,7 +9,7 @@ static TIM_HandleTypeDef LOCAL_tim_right;
 
 #define PWM_TIM_PERIOD_CYCLES 1000
 
-static const float MOTOR_TICKS_TO_CM = 0.001f;
+static const float MOTOR_TICKS_TO_CM       = 0.001f;
 static const float MOTOR_CM_PER_SEC_TO_PWM = 100.0f;
 
 
@@ -100,6 +100,11 @@ static void pos_get( uint32_t* pos )
 uint32_t LOCAL_offset[2];
 
 
+void motor_timers_abort()
+{
+  HAL_CHECK( HAL_TIM_Base_Stop(&LOCAL_tim_left) );
+  HAL_CHECK( HAL_TIM_Base_Stop(&LOCAL_tim_right) );    
+}
 
 void motor_timers_set_speed( uint32_t motor, float speed_cm_per_sec )
 {

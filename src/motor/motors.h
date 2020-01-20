@@ -8,7 +8,7 @@
 
 
 void motor_init();
-
+void motor_abort();
 void motors_send_cmd( uint32_t opcode, uint32_t* params, uint32_t nparams );
 
 typedef enum

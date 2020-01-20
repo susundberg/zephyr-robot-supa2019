@@ -13,3 +13,4 @@ void motor_control_init();
 void motor_control_enable( int motor, bool reverse );
 void motor_control_disable( int motor );
 void motor_control_disable_all();
+void motor_timers_abort();

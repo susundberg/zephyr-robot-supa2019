@@ -175,7 +175,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_pwm,
         SHELL_CMD_ARG(drive, NULL, "drive <dist_left> <dist_right>", cmd_motor_drive, 3, 0 ),
         SHELL_CMD_ARG(stop, NULL, "stop <>", cmd_motor_stop, 1, 0 ),
         SHELL_CMD_ARG(test, NULL, "test <time_ramp_sec> <time_const_sec> <max_speed cm/sec>", cmd_motor_test, 4, 0 ),
-
         SHELL_SUBCMD_SET_END
 );
 /* Creating root (level 0) command "demo" */

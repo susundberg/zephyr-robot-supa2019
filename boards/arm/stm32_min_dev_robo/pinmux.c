@@ -59,15 +59,17 @@ static const struct pin_config pinconf[] = {
 #endif /* CONFIG_USB_DC_STM32 */
     
     
-/* FIXME    
+    
 // CONFIG_SUPA_MOTOR_PWM
-       {STM32_PIN_PA1, (STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL) },
-       {STM32_PIN_PA15, (STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL) },
+       {STM32_PIN_PA6, ( STM32_PIN_PWM) },
+       {STM32_PIN_PA7, ( STM32_PIN_PWM) },
 
+       
+       
 // CONFIG_SUPA_MOTOR_PULSE_COUNT
-       {STM32_PIN_PD2, (STM32_PINMUX_ALT_FUNC_2 | STM32_PUSHPULL_NOPULL) },
-       {STM32_PIN_PE0, (STM32_PINMUX_ALT_FUNC_2 | STM32_PUSHPULL_NOPULL) },
-*/    
+       {STM32_PIN_PA12, (STM32_MODE_INPUT | STM32_CNF_IN_FLOAT) },
+       {STM32_PIN_PA0,  (STM32_MODE_INPUT | STM32_CNF_IN_FLOAT) },
+ 
     
 };
 
@@ -75,6 +77,7 @@ static int pinmux_stm32_init(struct device *port)
 {
 	ARG_UNUSED(port);
 
+    
 	stm32_setup_pins(pinconf, ARRAY_SIZE(pinconf));
 
 	return 0;

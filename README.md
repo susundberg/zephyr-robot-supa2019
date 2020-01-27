@@ -29,8 +29,10 @@ Motor related
 
 **Other**
 
-| Function        |    Pin           |   Info  |
-| --------------- | ---------------- | ----- |
+| Function        |    Pin            |   Info  |
+| --------------- | ----------------  | ----- |
+| UART1-TX        |  PA9              | (gre) |
+| UART1-RX        |  PA10             | (yel) |
 | IR-Sensor       |  PA2 - ISR2       | (blu) |
 | Emergency stop  |  PA1 - ISR1       |  |
 

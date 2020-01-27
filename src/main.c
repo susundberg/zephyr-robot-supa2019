@@ -15,6 +15,7 @@
 
 #include <zephyr.h>
 #include <sys/printk.h>
+#include <power/reboot.h>
 #include <device.h>
 #include <fatal.h>
 
@@ -124,12 +125,23 @@ void ircmd_move_back( IR_keycode code, bool repeated );
 void ircmd_move_left( IR_keycode code, bool repeated );
 void ircmd_move_right( IR_keycode code, bool repeated );
 
+static int cmd_reboot(const struct shell *shell, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    ARG_UNUSED(shell);
+    SHE_INF("Reboot requested now!");
+    sys_reboot( SYS_REBOOT_COLD );
+    return 0;
+}
+
+
 
 static int cmd_motor_stop(const struct shell *shell, size_t argc, char **argv)
 {
-    (void)argc;
-    (void)argv;
-    (void)shell;
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    ARG_UNUSED(shell);
     motors_send_cmd( MOTOR_CMD_STOP, NULL, 0 );
     return 0; 
 }
@@ -137,9 +149,9 @@ static int cmd_motor_stop(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_motor_test(const struct shell *shell, size_t argc, char **argv)
 {
-    (void)argc;
-    (void)argv;
-    (void)shell;
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    ARG_UNUSED(shell);
 
    int32_t params[3];
    
@@ -179,5 +191,4 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_pwm,
 );
 /* Creating root (level 0) command "demo" */
 SHELL_CMD_REGISTER(motor, &sub_pwm, "MOTOR commands", NULL);
-
-
+SHELL_CMD_ARG_REGISTER(reboot, NULL, "REBOOT system", cmd_reboot, 0, 0);

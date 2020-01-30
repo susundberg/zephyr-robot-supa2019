@@ -9,9 +9,9 @@
 
 LOG_MODULE_REGISTER(ir);
 
-static const int   LOCAL_pin_pins[2] = { DT_GPIO_KEYS_IR_INPUT_GPIOS_PIN, DT_GPIO_LEDS_IR_OUTPUT_GPIOS_PIN };
-struct device*     LOCAL_pin_dev[2];
-static const char* LOCAL_pin_names[] = { DT_GPIO_KEYS_IR_INPUT_GPIOS_CONTROLLER, DT_GPIO_LEDS_IR_OUTPUT_GPIOS_CONTROLLER };
+static const int       LOCAL_pin_pins[2] = { DT_GPIO_KEYS_IR_INPUT_GPIOS_PIN, DT_GPIO_LEDS_IR_OUTPUT_GPIOS_PIN };
+static struct device*  LOCAL_pin_dev[2];
+static const char*     LOCAL_pin_names[] = { DT_GPIO_KEYS_IR_INPUT_GPIOS_CONTROLLER, DT_GPIO_LEDS_IR_OUTPUT_GPIOS_CONTROLLER };
 
 
 #define LOCAL_isr_queue_n 64

@@ -230,6 +230,7 @@ void motors_main()
     
     motor_timers_init();
     motor_control_init();
+    motor_bumber_init();
     
     LOG_INF("Motor app started!");
     
@@ -259,7 +260,11 @@ void motors_main()
                 motor_cmd_stop( cmd );
                 GLOBAL_motor_state = MOTOR_STATUS_IDLE;
                 break;
-            
+                
+            case MOTOR_CMD_EV_BUMBER:
+                LOG_INF("Ignore bumber hit: 0x%X", cmd->params[0] );
+                break;
+                
             default:
                 FATAL_ERROR("Invalid cmd: %d", cmd->opcode );
                 break;

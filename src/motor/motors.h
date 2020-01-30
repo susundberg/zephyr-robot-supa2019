@@ -10,6 +10,7 @@
 void motor_init();
 void motor_abort();
 void motors_send_cmd( uint32_t opcode, uint32_t* params, uint32_t nparams );
+void motor_bumber_init();
 
 typedef enum
 {
@@ -17,6 +18,8 @@ typedef enum
     MOTOR_CMD_DRIVE,
     MOTOR_CMD_STOP,
     MOTOR_CMD_TEST,
+    
+    MOTOR_CMD_EV_BUMBER,
 } Motor_cmd_type; 
 
 typedef struct

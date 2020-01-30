@@ -56,6 +56,19 @@
 	   };
 	};
 	
+	motor_bumbers
+	{
+		compatible = "gpio-keys";
+		bumber_left: bumber_left {
+			label = "bumber left";
+			gpios = <&gpioa 11 GPIO_INT_ACTIVE_HIGH >;
+		};
+		bumber_right: bumber_right {
+			label = "bumber right";
+			gpios = <&gpioa 8 GPIO_INT_ACTIVE_HIGH >;
+		};
+	};
+	
 	
 
 };

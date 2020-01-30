@@ -8,7 +8,7 @@
 LOG_MODULE_REGISTER(motor_con);
 
 
-struct device* LOCAL_dev[4];
+static struct device* LOCAL_dev[4];
 static const char* LOCAL_names[] = { DT_GPIO_LEDS_MOTOR_1A_GPIOS_CONTROLLER, DT_GPIO_LEDS_MOTOR_1B_GPIOS_CONTROLLER,
                               DT_GPIO_LEDS_MOTOR_2A_GPIOS_CONTROLLER, DT_GPIO_LEDS_MOTOR_2B_GPIOS_CONTROLLER };
                               

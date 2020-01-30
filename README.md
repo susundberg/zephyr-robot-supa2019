@@ -10,36 +10,38 @@ Motor related
 
 | Function        |    Pin           |   Info  |
 | -------------   | ---------------- | ------- |
-| Hal input       | PD2 - TIM3_ETR   | (yel) |
-| Motor Control A | PE9 - DOUT       | (yel) -> (Pin 9 on motor) |
-| Motor Control B | PE10 - DOUT      | (ora) -> (Pin 8 on motor) |
-| Motor PWM       | PA15 - TIM2_CH1  | (red) -> (Pin 10 on motor) |
-| Bumber 1        | PE7 - ISR7       | (bla) |
+| Hal input       | PA12 - TIM1_ETR   | (yel) |
+| Motor Control A | PB12 - DOUT       | (yel) -> (Pin 9 on motor) |
+| Motor Control B | PB13 - DOUT      | (ora) -> (Pin 8 on motor) |
+| Motor PWM       | PA6 - TIM3_CH1  | (red) -> (Pin 10 on motor) |
+| Bumber 1        | PA11 - ISR11       | (bla) |
 
 **Motor2**
 
 | Function        |    Pin           |   Info  |
 | --------------- | ---------------- | ----- |
-| Hal input       | PE0  - TIM4_ETR  | (ora) |
-| Motor Control A | PE11 - DOUT      | (red) -> (Pin 9 on motor) |
-| Motor Control B | PE12 - DOUT      | (gre) -> (Pin 8 on motor) |
-| Motor PWM       | PA1  - TIM2_CH2  | (blu) |
-| Bumber 2        | PE8 - ISR8       | (bro) |
+| Hal input       | PA0  - TIM2_ETR  | (ora) |
+| Motor Control A | PB14 - DOUT      | (red) -> (Pin 9 on motor) |
+| Motor Control B | PB15 - DOUT      | (gre) -> (Pin 8 on motor) |
+| Motor PWM       | PA7  - TIM3_CH2  | (blu) |
+| Bumber 2        | PA8 - ISR8       | (bro) |
 
 
 **Other**
 
-| Function        |    Pin           |   Info  |
-| --------------- | ---------------- | ----- |
-| IR-Sensor       | PC6 - ISR6       | (blu) |
-| Emergency stop  | PD3 - ISR3       |  |
+| Function        |    Pin            |   Info  |
+| --------------- | ----------------  | ----- |
+| UART1-TX        |  PA9              | (gre) |
+| UART1-RX        |  PA10             | (yel) |
+| IR-Sensor       |  PA2 - ISR2       | (blu) |
+| Emergency stop  |  PA1 - ISR1       |  |
 
 **Big motor**
 
 | Function        |    Pin           |   Info  |
 | --------------- | ---------------- | ----- |
-| Big Enable      | PD8 - DOUT       |  |
-| Big current meas| PC4 - ADC1-14    |  |
+| Big Enable      | PA15 - DOUT       |  |
+| Big current meas| PA3 - ADC1-3    |  |
 
 
 ## Motor control

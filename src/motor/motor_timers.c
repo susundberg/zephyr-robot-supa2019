@@ -1,4 +1,9 @@
 
+#include <stm32f1xx_hal.h>
+#include <stm32f1xx_hal_conf.h>
+
+
+#define SUPA_MODULE "mot"
 
 #include "motors.h"
 
@@ -9,8 +14,10 @@ static TIM_HandleTypeDef LOCAL_tim_right;
 
 #define PWM_TIM_PERIOD_CYCLES 1000
 
-static const float MOTOR_TICKS_TO_CM       = 0.001f;
-static const float MOTOR_CM_PER_SEC_TO_PWM = 100.0f;
+// motor test 1 10 5 -- yielded around 10506 ticks -> 5 rounds - each is 22.62 cm long -> 5*(22.62) / 10506 = 0.0107653 CM / tick
+
+static const float MOTOR_TICKS_TO_CM       = 0.0107653f;
+static const float MOTOR_CM_PER_SEC_TO_PWM = 30.0;
 
 
 LOG_MODULE_REGISTER( motor_tim );
@@ -24,10 +31,10 @@ static void tim_pwm_init(void)
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
 
-  __HAL_RCC_TIM2_CLK_ENABLE();
+  __HAL_RCC_TIM3_CLK_ENABLE();
   
-  LOCAL_tim_pwm.Instance = TIM2;
-  LOCAL_tim_pwm.Init.Prescaler     = 499; // Clock is 100 000 Khz / 500 -> 200 khz
+  LOCAL_tim_pwm.Instance = TIM3; 
+  LOCAL_tim_pwm.Init.Prescaler     = (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 200000) - 1; // 500 -> 200 khz
   LOCAL_tim_pwm.Init.CounterMode   = TIM_COUNTERMODE_UP;
   LOCAL_tim_pwm.Init.Period        = PWM_TIM_PERIOD_CYCLES;
   LOCAL_tim_pwm.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -55,35 +62,35 @@ static void tim_pwm_init(void)
 /* TIM3 init function */
 static void tim_counter_init(void)
 {
-  TIM_SlaveConfigTypeDef sSlaveConfig = {0};
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
 
   
-  __HAL_RCC_TIM3_CLK_ENABLE();
-  __HAL_RCC_TIM4_CLK_ENABLE();
+  __HAL_RCC_TIM1_CLK_ENABLE();
+  __HAL_RCC_TIM2_CLK_ENABLE();
   
   
-  LOCAL_tim_left.Instance = TIM3;
+  LOCAL_tim_left.Instance = TIM1;
   LOCAL_tim_left.Init.Prescaler = 0;
   LOCAL_tim_left.Init.CounterMode = TIM_COUNTERMODE_UP;
   LOCAL_tim_left.Init.Period = 0xFFFF;
   LOCAL_tim_left.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   LOCAL_tim_left.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   
-  LOCAL_tim_right.Instance = TIM4;
+  LOCAL_tim_right.Instance = TIM2;
   LOCAL_tim_right.Init = LOCAL_tim_left.Init;
   
   HAL_CHECK( HAL_TIM_Base_Init(&LOCAL_tim_left) );
   HAL_CHECK( HAL_TIM_Base_Init(&LOCAL_tim_right) );
   
   
-  sSlaveConfig.SlaveMode = TIM_SLAVEMODE_EXTERNAL1;
-  sSlaveConfig.InputTrigger = TIM_TS_ETRF;
-  sSlaveConfig.TriggerPolarity = TIM_TRIGGERPOLARITY_NONINVERTED;
-  sSlaveConfig.TriggerPrescaler = TIM_TRIGGERPRESCALER_DIV1;
-  sSlaveConfig.TriggerFilter = 0;
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_ETRMODE2;
+  sClockSourceConfig.ClockPolarity = TIM_CLOCKPOLARITY_NONINVERTED;
+  sClockSourceConfig.ClockPrescaler = TIM_CLOCKPRESCALER_DIV1;
+  sClockSourceConfig.ClockFilter = 0;
   
-  HAL_CHECK( HAL_TIM_SlaveConfigSynchro(&LOCAL_tim_left, &sSlaveConfig) );
-  HAL_CHECK( HAL_TIM_SlaveConfigSynchro(&LOCAL_tim_right, &sSlaveConfig) );
+  HAL_CHECK (HAL_TIM_ConfigClockSource(&LOCAL_tim_left, &sClockSourceConfig));
+  HAL_CHECK (HAL_TIM_ConfigClockSource(&LOCAL_tim_right, &sClockSourceConfig));
+  
 
   HAL_CHECK( HAL_TIM_Base_Start(&LOCAL_tim_left) );
   HAL_CHECK( HAL_TIM_Base_Start(&LOCAL_tim_right) );
@@ -106,7 +113,7 @@ void motor_timers_abort()
   HAL_CHECK( HAL_TIM_Base_Stop(&LOCAL_tim_right) );    
 }
 
-void motor_timers_set_speed( uint32_t motor, float speed_cm_per_sec )
+uint32_t motor_timers_set_speed( uint32_t motor, float speed_cm_per_sec )
 {
    float pwm_target_f  = ( speed_cm_per_sec*MOTOR_CM_PER_SEC_TO_PWM + 0.5f );
    
@@ -128,6 +135,7 @@ void motor_timers_set_speed( uint32_t motor, float speed_cm_per_sec )
    }
    
    __HAL_TIM_SET_COMPARE( &LOCAL_tim_pwm, LOCAL_pwm_channels[ motor ], pwm_target );
+   return pwm_target;
 }
 
 

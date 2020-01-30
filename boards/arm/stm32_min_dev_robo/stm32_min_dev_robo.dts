@@ -1,0 +1,81 @@
+/*
+ * Copyright (c) 2017, embedjournal.com
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "stm32_min_dev.dtsi"
+
+/ {
+	model = "STM32 Minimum Development Board (Blue)";
+	compatible = "st,stm32_min_dev_blue", "st,stm32f103c8";
+
+	leds {
+		led: led {
+			gpios = <&gpioc 13 GPIO_INT_ACTIVE_HIGH>;
+		};
+	};
+
+	ir_receiver_output 
+	{
+	   compatible = "gpio-leds";
+	   ir_output: ir_output {
+			gpios = <&gpioc 13 GPIO_INT_ACTIVE_HIGH>;
+			label = "ir output"; // Also led blue
+	   };
+
+	};
+	ir_receiver_input
+	{
+		compatible = "gpio-keys";
+		ir_input: ir_input {
+			label = "ir input";
+			gpios = <&gpioa 2 GPIO_INT_ACTIVE_HIGH >;
+		};
+	};
+	
+	motor_control
+	{
+	   compatible = "gpio-leds";
+	   motor_1a: motor_1a {
+			gpios = <&gpiob 12 GPIO_INT_ACTIVE_HIGH>;
+			label = "motor 1a";
+	   };
+	   motor_1b: motor_1b {
+			gpios = <&gpiob 13 GPIO_INT_ACTIVE_HIGH>;
+			label = "motor 1b";
+	   };
+	   motor_2a: motor_2a {
+			gpios = <&gpiob 14 GPIO_INT_ACTIVE_HIGH>;
+			label = "motor 2a";
+	   };
+	   motor_2b: motor_2b {
+			gpios = <&gpiob 15 GPIO_INT_ACTIVE_HIGH>;
+			label = "motor 2b";
+	   };
+	};
+	
+	
+
+};
+
+
+&flash0 {
+        /*
+         * For more information, see:
+         * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+         */
+        partitions {
+                compatible = "fixed-partitions";
+                #address-cells = <1>;
+                #size-cells = <1>;
+
+                /* Set 6Kb of storage at the end of the 64Kb of flash */
+                storage_partition: partition@e800 {
+                        label = "storage";
+                        reg = <0x0000e800 0x00001800>;
+                };
+        };
+};
+

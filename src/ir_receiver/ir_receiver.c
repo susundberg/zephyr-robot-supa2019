@@ -3,6 +3,8 @@
 
 #include <drivers/gpio.h>
 
+#define SUPA_MODULE "irc"
+
 #include "ir_receiver.h"
 
 LOG_MODULE_REGISTER(ir);
@@ -118,7 +120,7 @@ static void handle_received_keycode( u16_t keycode, bool repeated )
        LOCAL_ir_registry_fun[ loop ]( keycode, repeated );
        return;
    }
-   LOG_DBG("Key 0x%04X not registered", keycode );
+   LOG_INF("Key 0x%04X not registered", keycode );
 }
 
 

@@ -1,15 +1,15 @@
 #include <zephyr.h>
 #include <math.h>
 
-#include <drivers/pwm.h>
 #include <drivers/gpio.h>
 #include <logging/log.h>
 
+#define SUPA_MODULE "mom"
+
+#include "../main.h"
 #include "motors.h"
 #include "motor_ramp.h"
 #include "motor_timers.h"
-
-#include "../main.h"
 
 
 LOG_MODULE_REGISTER(motor);
@@ -112,8 +112,9 @@ static void motor_cmd_test( Motor_cmd* cmd )
             break;
         }
         
+        uint32_t motor_pwm[2];
         for ( int loop = 0; loop < 2; loop ++ )
-           motor_timers_set_speed( loop, speed_target );
+           motor_pwm[loop] = motor_timers_set_speed( loop, speed_target );
 
         k_sleep( time_diff_sec * 1000 );
         
@@ -125,7 +126,7 @@ static void motor_cmd_test( Motor_cmd* cmd )
         
         memcpy( pos_old, position_cm, sizeof(float)*2 );
         
-        printf("T=%0.1f - pos: %0.1f %0.1f -- speed: %0.1f %0.1f - target: %0.1f\n", time_sec, position_cm[0], position_cm[1], speed_obs[0], speed_obs[1], speed_target ); 
+        printf("T=%0.1f - pos: %0.1f %0.1f -- speed: %0.1f %0.1f - target: %0.1f - pwm %d %d\n", time_sec, position_cm[0], position_cm[1], speed_obs[0], speed_obs[1], speed_target, motor_pwm[0], motor_pwm[1] ); 
     }
     
     motor_cmd_stop(NULL);
@@ -148,7 +149,7 @@ static void motor_cmd_drive( Motor_cmd* cmd )
 
     for ( int loop = 0; loop < 2; loop ++ )
     {
-        int32_t pos = cmd->params[0];
+        int32_t pos = cmd->params[loop];
         bool reverse = false;    
         if ( pos < 0 )
         { 
@@ -156,7 +157,7 @@ static void motor_cmd_drive( Motor_cmd* cmd )
             pos = pos*-1;
         }
         
-        motor_ramp_init( &LOCAL_target[0], MOTOR_MAX_ACC_CM_SS, MOTOR_MAX_SPEED_CM_S, pos );
+        motor_ramp_init( &LOCAL_target[loop], MOTOR_MAX_ACC_CM_SS, MOTOR_MAX_SPEED_CM_S, pos );
         motor_control_enable( loop, reverse );
     }    
             
@@ -193,6 +194,9 @@ static void motor_cmd_drive( Motor_cmd* cmd )
                 break;
             }
             motor_timers_set_speed( loop, speed_cm_per_sec );
+            
+            
+            // printf("T=%0.1f - pos: %0.1f -- speed: %0.1f pwm %d\n", time_sec, pos_cm, speed_cm_per_sec,  motor_pwm ); 
         }
         
         Motor_cmd* cmd = k_fifo_get(&GLOBAL_motor_fifo, MOTOR_CONTROL_LOOP_MS ); // Wait for commands POLL INTERVAL
@@ -206,6 +210,7 @@ static void motor_cmd_drive( Motor_cmd* cmd )
     }
     // make sure speed is zero.
     motor_cmd_stop( NULL );
+    LOG_INF("Final position %d %d (mm)", (int)(position_cm[0]*10.0f), (int)(position_cm[1]*10.0f) ); 
 }
 
 

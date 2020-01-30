@@ -1,0 +1,36 @@
+diff --git a/drivers/serial/uart_stm32.c b/drivers/serial/uart_stm32.c
+index 3d0dd1ca84..03948225a0 100644
+--- a/drivers/serial/uart_stm32.c
++++ b/drivers/serial/uart_stm32.c
+@@ -671,8 +671,8 @@ static int uart_stm32_init(struct device *dev)
+ 
+ 	/* 8 data bit, 1 start bit, 1 stop bit, no parity */
+ 	LL_USART_ConfigCharacter(UartInstance,
+-				 LL_USART_DATAWIDTH_8B,
+-				 LL_USART_PARITY_NONE,
++				 LL_USART_DATAWIDTH_9B,
++				 LL_USART_PARITY_EVEN,
+ 				 LL_USART_STOPBITS_1);
+ 
+ 	if (config->hw_flow_control) {
+diff --git a/kernel/init.c b/kernel/init.c
+index 6c822f6dbd..7bc7a4541c 100644
+--- a/kernel/init.c
++++ b/kernel/init.c
+@@ -488,6 +488,7 @@ sys_rand_fallback:
+  *
+  * @return Does not return
+  */
++extern void supa_bootloader_check();
+ FUNC_NORETURN void z_cstart(void)
+ {
+ #ifdef CONFIG_STACK_CANARIES
+@@ -496,7 +497,7 @@ FUNC_NORETURN void z_cstart(void)
+ 
+ 	/* gcov hook needed to get the coverage report.*/
+ 	gcov_static_init();
+-
++        supa_bootloader_check();
+ 	LOG_CORE_INIT();
+ 
+ 	/* perform any architecture-specific initialization */

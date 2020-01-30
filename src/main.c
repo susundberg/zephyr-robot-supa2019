@@ -15,6 +15,7 @@
 
 #include <zephyr.h>
 #include <sys/printk.h>
+#include <power/reboot.h>
 #include <device.h>
 #include <fatal.h>
 
@@ -27,8 +28,12 @@
 #include <shell/shell.h>
 #include <shell/shell_uart.h>
 
+#define SUPA_MODULE "mai"
+#include "main.h"
+#include "boot.h"
 #include "motor/motors.h"
 #include "ir_receiver/ir_receiver.h"
+#include "utils/utils.h"
 
 LOG_MODULE_REGISTER(app);
 
@@ -40,6 +45,12 @@ LOG_MODULE_REGISTER(app);
   shell_fprintf(shell, SHELL_ERROR, fmt, ##__VA_ARGS__)
 
   
+void supa_fatal_handler( const char* module, int line )
+{
+    printk("\nFATAL ERROR %s:%d\n", module, line );
+    k_sys_fatal_error_handler(0xFFFF, NULL );
+}
+  
 void ircmd_move( IR_keycode code, bool repeated );
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
@@ -47,7 +58,6 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
     ARG_UNUSED(esf);
     motor_abort();
     LOG_PANIC();
-    LOG_ERR("Halting system");
     k_fatal_halt( reason );
     CODE_UNREACHABLE;
 }
@@ -81,7 +91,7 @@ void ircmd_move( IR_keycode code, bool repeated )
 {
     int32_t params[2];    
     
-    static const int MOTOR_TEST_TURN_DISTANCE = 10.0;
+    static const int MOTOR_TEST_TURN_DISTANCE  = 12.0;
     static const int MOTOR_TEST_DRIVE_DISTANCE = 20.0;
     
     if (repeated)
@@ -116,12 +126,35 @@ void ircmd_move_back( IR_keycode code, bool repeated );
 void ircmd_move_left( IR_keycode code, bool repeated );
 void ircmd_move_right( IR_keycode code, bool repeated );
 
+static int cmd_reboot(const struct shell *shell, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    ARG_UNUSED(shell);
+    SHE_INF("Reboot requested now!\n");
+    sys_reboot( SYS_REBOOT_COLD );
+    return 0;
+}
+
+static int cmd_bootloader(const struct shell *shell, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    ARG_UNUSED(shell);
+    SHE_INF("Reboot BOOTLOADER!\n");
+    supa_bootloader_enable();
+    sys_reboot( SYS_REBOOT_COLD );
+    return 0;
+}
+
+
+
 
 static int cmd_motor_stop(const struct shell *shell, size_t argc, char **argv)
 {
-    (void)argc;
-    (void)argv;
-    (void)shell;
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    ARG_UNUSED(shell);
     motors_send_cmd( MOTOR_CMD_STOP, NULL, 0 );
     return 0; 
 }
@@ -129,9 +162,9 @@ static int cmd_motor_stop(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_motor_test(const struct shell *shell, size_t argc, char **argv)
 {
-    (void)argc;
-    (void)argv;
-    (void)shell;
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    ARG_UNUSED(shell);
 
    int32_t params[3];
    
@@ -167,10 +200,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_pwm,
         SHELL_CMD_ARG(drive, NULL, "drive <dist_left> <dist_right>", cmd_motor_drive, 3, 0 ),
         SHELL_CMD_ARG(stop, NULL, "stop <>", cmd_motor_stop, 1, 0 ),
         SHELL_CMD_ARG(test, NULL, "test <time_ramp_sec> <time_const_sec> <max_speed cm/sec>", cmd_motor_test, 4, 0 ),
-
         SHELL_SUBCMD_SET_END
 );
 /* Creating root (level 0) command "demo" */
 SHELL_CMD_REGISTER(motor, &sub_pwm, "MOTOR commands", NULL);
-
+SHELL_CMD_ARG_REGISTER(restart, NULL, "RESTART system", cmd_reboot, 0, 0);
+SHELL_CMD_ARG_REGISTER(bootloader, NULL, "REBOOT system to bootloader", cmd_bootloader, 0, 0);
 

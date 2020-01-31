@@ -18,6 +18,8 @@
 #include <power/reboot.h>
 #include <device.h>
 #include <fatal.h>
+#include <init.h>
+
 
 #include <drivers/pwm.h>
 #include <drivers/gpio.h>
@@ -194,7 +196,7 @@ static int cmd_motor_drive(const struct shell *shell, size_t argc, char **argv)
     return 0; 
 }
 
-
+SYS_INIT( supa_bootloader_check, PRE_KERNEL_1, 0 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_pwm,
         SHELL_CMD_ARG(drive, NULL, "drive <dist_left> <dist_right>", cmd_motor_drive, 3, 0 ),

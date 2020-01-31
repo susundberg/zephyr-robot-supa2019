@@ -34,6 +34,7 @@
 &usart1 {
 	current-speed = <115200>;
 	status = "okay";
+    parity = "even";
 };
 
 &usart2 {

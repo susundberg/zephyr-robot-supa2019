@@ -18,6 +18,8 @@
 #include <power/reboot.h>
 #include <device.h>
 #include <fatal.h>
+#include <init.h>
+
 
 #include <drivers/pwm.h>
 #include <drivers/gpio.h>
@@ -51,7 +53,8 @@ void supa_fatal_handler( const char* module, int line )
     k_sys_fatal_error_handler(0xFFFF, NULL );
 }
   
-void ircmd_move( IR_keycode code, bool repeated );
+static void ircmd_move( IR_keycode code, bool repeated );
+static void ircmd_function( IR_keycode code, bool repeated );
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 {
@@ -75,7 +78,7 @@ void main(void)
     ir_receiver_register( KEY_VOL_DOWN, ircmd_move );
     ir_receiver_register( KEY_LEFT, ircmd_move);
     ir_receiver_register( KEY_RIGHT, ircmd_move );    
-    
+    ir_receiver_register( KEY_FUNCTION, ircmd_function );
     LOG_INF("Robot control task started!");
     while (1) 
     {
@@ -87,7 +90,7 @@ void main(void)
 
 
 
-void ircmd_move( IR_keycode code, bool repeated )
+static void ircmd_move( IR_keycode code, bool repeated )
 {
     int32_t params[2];    
     
@@ -122,9 +125,14 @@ void ircmd_move( IR_keycode code, bool repeated )
     motors_send_cmd( MOTOR_CMD_DRIVE, params, 2 );
 }
 
-void ircmd_move_back( IR_keycode code, bool repeated );
-void ircmd_move_left( IR_keycode code, bool repeated );
-void ircmd_move_right( IR_keycode code, bool repeated );
+static void ircmd_function( IR_keycode code, bool repeated )
+{
+    static bool value = true;
+    
+    value = !value;
+    motor_control_function( value );
+}
+
 
 static int cmd_reboot(const struct shell *shell, size_t argc, char **argv)
 {
@@ -194,7 +202,7 @@ static int cmd_motor_drive(const struct shell *shell, size_t argc, char **argv)
     return 0; 
 }
 
-
+SYS_INIT( supa_bootloader_check, PRE_KERNEL_1, 0 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_pwm,
         SHELL_CMD_ARG(drive, NULL, "drive <dist_left> <dist_right>", cmd_motor_drive, 3, 0 ),

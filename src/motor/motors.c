@@ -14,29 +14,75 @@
 
 LOG_MODULE_REGISTER(motor);
 
-extern struct k_fifo GLOBAL_motor_fifo;
 
+typedef struct
+{
+  int32_t         params[3];
+  Motor_cmd_type  opcode; 
+} Motor_cmd;
 
 typedef enum
 {
     MOTOR_STATUS_IDLE,
     MOTOR_STATUS_DRIVE,
-} Motor_state ;
+} Motor_state;
 
+
+#define LOCAL_queue_size 8
+static Motor_cmd __aligned(4) LOCAL_queue_buffer[ LOCAL_queue_size ];
+static struct k_msgq LOCAL_queue;
 
 
 #define MOTOR_CONTROL_LOOP_MS 10
 static const float MOTOR_CONTROL_LOOP_MS_P1 = 1000.0f / MOTOR_CONTROL_LOOP_MS;
 #define MOTOR_MAX_CONTROL_SPEED_CM_PER_SEC 1000.0f
-struct k_fifo GLOBAL_motor_fifo;
 Motor_state GLOBAL_motor_state;
+
+
+void motors_send_cmd( uint32_t opcode, uint32_t* params, uint32_t nparams )
+{
+
+    static Motor_cmd cmd;
+    
+    cmd.opcode = opcode;
+    int loop;
+    ASSERT_ISR( nparams <= MOTOR_MAX_PARAMS );
+    for ( loop = 0; loop < nparams; loop ++ )
+    {
+        cmd.params[loop] = params[loop];
+    }
+    for( ; loop < MOTOR_MAX_PARAMS; loop ++ )
+    {
+        cmd.params[loop] = 0;
+    }
+    
+    ASSERT_ISR( k_msgq_put( &LOCAL_queue, &cmd, K_NO_WAIT ) == 0 );
+}
+
+static const Motor_cmd* motor_queue_get( uint32_t wait_time )
+{
+   static Motor_cmd cmd;
+   
+   while (1)
+   {
+       int ret = k_msgq_get(&LOCAL_queue, &cmd, wait_time );
+      if (  ret == 0 )
+          return &cmd;
+      
+      if ( ret == -ENOMSG )
+          continue;
+      
+      return NULL;
+   }   
+}
+
 
 void motor_abort()
 {
     motor_timers_abort();
 }
 
-static void motor_cmd_stop( Motor_cmd* cmd )
+static void motor_cmd_stop( const Motor_cmd* cmd )
 {
     (void)(cmd);
     motor_control_disable_all();
@@ -58,7 +104,7 @@ static float drive_time_get( const s64_t* timer )
 
 #include <stdio.h>
 
-static void motor_cmd_test( Motor_cmd* cmd )
+static void motor_cmd_test( const Motor_cmd* cmd )
 {
     s64_t drive_start_ticks; 
     
@@ -136,7 +182,7 @@ static void motor_cmd_test( Motor_cmd* cmd )
 }
 
 
-static void motor_cmd_drive( Motor_cmd* cmd )
+static void motor_cmd_drive( const Motor_cmd* cmd )
 {
     static Motor_ramp LOCAL_target[2];
     s64_t drive_start_ticks;
@@ -199,12 +245,11 @@ static void motor_cmd_drive( Motor_cmd* cmd )
             // printf("T=%0.1f - pos: %0.1f -- speed: %0.1f pwm %d\n", time_sec, pos_cm, speed_cm_per_sec,  motor_pwm ); 
         }
         
-        Motor_cmd* cmd = k_fifo_get(&GLOBAL_motor_fifo, MOTOR_CONTROL_LOOP_MS ); // Wait for commands POLL INTERVAL
+        const Motor_cmd* cmd = motor_queue_get( MOTOR_CONTROL_LOOP_MS );
         
         if ( cmd != NULL )
         {
             LOG_INF("Command %d received while driving, stopping!", cmd->opcode );
-            k_free( cmd );
             break;
         }
     }
@@ -214,30 +259,21 @@ static void motor_cmd_drive( Motor_cmd* cmd )
 }
 
 
-void motors_send_cmd( uint32_t opcode, uint32_t* params, uint32_t nparams )
-{
-    Motor_cmd* cmd = k_malloc( sizeof(Motor_cmd) );
-    memset( cmd, 0x00, sizeof( sizeof(Motor_cmd) ) ) ;
-    cmd->opcode = opcode;
-    memcpy( cmd->params, params, nparams*sizeof(uint32_t));
-    k_fifo_put( &GLOBAL_motor_fifo, cmd );
-    
-}
-
 void motors_main()
 {
-    k_fifo_init(&GLOBAL_motor_fifo);
-    
+    k_msgq_init( &LOCAL_queue, (char*)LOCAL_queue_buffer, sizeof(Motor_cmd), LOCAL_queue_size );
+
     motor_timers_init();
     motor_control_init();
+    motor_bumber_init();
     
     LOG_INF("Motor app started!");
     
     
     while( true )
     {
-        
-        Motor_cmd* cmd = k_fifo_get(&GLOBAL_motor_fifo, K_FOREVER);
+
+        const Motor_cmd* cmd = motor_queue_get( K_FOREVER );
         LOG_INF("Motor execute %d", cmd->opcode );
         
         switch( cmd->opcode )
@@ -259,12 +295,16 @@ void motors_main()
                 motor_cmd_stop( cmd );
                 GLOBAL_motor_state = MOTOR_STATUS_IDLE;
                 break;
-            
+                
+            case MOTOR_CMD_EV_BUMBER:
+                LOG_INF("Ignore bumber hit: 0x%X", cmd->params[0] );
+                break;
+                
             default:
                 FATAL_ERROR("Invalid cmd: %d", cmd->opcode );
                 break;
         }
-        k_free( cmd );
+
     }
 }
 

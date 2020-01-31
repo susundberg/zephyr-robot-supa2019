@@ -11,6 +11,7 @@ typedef enum
     KEY_LEFT = 0xe418,
     KEY_RIGHT = 0xe01c,
     KEY_FUNCTION = 0xd628,
+    
 } IR_keycode;
 
 typedef void (*IRCmd_callback)( IR_keycode code, bool repeated );

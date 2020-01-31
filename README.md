@@ -6,7 +6,7 @@ Zephyr based robot
 
 Motor related
 
-**Motor1**
+**Motor1 - left **
 
 | Function        |    Pin           |   Info  |
 | -------------   | ---------------- | ------- |
@@ -14,9 +14,9 @@ Motor related
 | Motor Control A | PB12 - DOUT       | (yel) -> (Pin 9 on motor) |
 | Motor Control B | PB13 - DOUT      | (ora) -> (Pin 8 on motor) |
 | Motor PWM       | PA6 - TIM3_CH1  | (red) -> (Pin 10 on motor) |
-| Bumber 1        | PA11 - ISR11       | (bla) |
+| Bumber 1        | PA11 - ISR11       | (red) |
 
-**Motor2**
+**Motor2 - right**
 
 | Function        |    Pin           |   Info  |
 | --------------- | ---------------- | ----- |
@@ -24,7 +24,7 @@ Motor related
 | Motor Control A | PB14 - DOUT      | (red) -> (Pin 9 on motor) |
 | Motor Control B | PB15 - DOUT      | (gre) -> (Pin 8 on motor) |
 | Motor PWM       | PA7  - TIM3_CH2  | (blu) |
-| Bumber 2        | PA8 - ISR8       | (bro) |
+| Bumber 2        | PA8 - ISR8       | (blue) |
 
 
 **Other**

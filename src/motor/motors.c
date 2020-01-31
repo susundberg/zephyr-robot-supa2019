@@ -38,12 +38,51 @@ static const float MOTOR_CONTROL_LOOP_MS_P1 = 1000.0f / MOTOR_CONTROL_LOOP_MS;
 #define MOTOR_MAX_CONTROL_SPEED_CM_PER_SEC 1000.0f
 Motor_state GLOBAL_motor_state;
 
+
+void motors_send_cmd( uint32_t opcode, uint32_t* params, uint32_t nparams )
+{
+
+    static Motor_cmd cmd;
+    
+    cmd.opcode = opcode;
+    int loop;
+    ASSERT_ISR( nparams <= MOTOR_MAX_PARAMS );
+    for ( loop = 0; loop < nparams; loop ++ )
+    {
+        cmd.params[loop] = params[loop];
+    }
+    for( ; loop < MOTOR_MAX_PARAMS; loop ++ )
+    {
+        cmd.params[loop] = 0;
+    }
+    
+    ASSERT_ISR( k_msgq_put( &LOCAL_queue, &cmd, K_NO_WAIT ) == 0 );
+}
+
+static const Motor_cmd* motor_queue_get( uint32_t wait_time )
+{
+   static Motor_cmd cmd;
+   
+   while (1)
+   {
+       int ret = k_msgq_get(&LOCAL_queue, &cmd, wait_time );
+      if (  ret == 0 )
+          return &cmd;
+      
+      if ( ret == -ENOMSG )
+          continue;
+      
+      return NULL;
+   }   
+}
+
+
 void motor_abort()
 {
     motor_timers_abort();
 }
 
-static void motor_cmd_stop( Motor_cmd* cmd )
+static void motor_cmd_stop( const Motor_cmd* cmd )
 {
     (void)(cmd);
     motor_control_disable_all();
@@ -65,7 +104,7 @@ static float drive_time_get( const s64_t* timer )
 
 #include <stdio.h>
 
-static void motor_cmd_test( Motor_cmd* cmd )
+static void motor_cmd_test( const Motor_cmd* cmd )
 {
     s64_t drive_start_ticks; 
     
@@ -143,7 +182,7 @@ static void motor_cmd_test( Motor_cmd* cmd )
 }
 
 
-static void motor_cmd_drive( Motor_cmd* cmd )
+static void motor_cmd_drive( const Motor_cmd* cmd )
 {
     static Motor_ramp LOCAL_target[2];
     s64_t drive_start_ticks;
@@ -206,12 +245,11 @@ static void motor_cmd_drive( Motor_cmd* cmd )
             // printf("T=%0.1f - pos: %0.1f -- speed: %0.1f pwm %d\n", time_sec, pos_cm, speed_cm_per_sec,  motor_pwm ); 
         }
         
-        Motor_cmd* cmd = NULL;
+        const Motor_cmd* cmd = motor_queue_get( MOTOR_CONTROL_LOOP_MS );
         
-        if ( k_msgq_get(&LOCAL_queue, &cmd, MOTOR_CONTROL_LOOP_MS ) == 0 )
+        if ( cmd != NULL )
         {
             LOG_INF("Command %d received while driving, stopping!", cmd->opcode );
-            k_free( cmd );
             break;
         }
     }
@@ -220,25 +258,6 @@ static void motor_cmd_drive( Motor_cmd* cmd )
     LOG_INF("Final position %d %d (mm)", (int)(position_cm[0]*10.0f), (int)(position_cm[1]*10.0f) ); 
 }
 
-
-void motors_send_cmd( uint32_t opcode, uint32_t* params, uint32_t nparams )
-{
-
-    static Motor_cmd cmd;
-    cmd.opcode = opcode;
-    int loop;
-    ASSERT_ISR( nparams <= MOTOR_MAX_PARAMS );
-    for ( loop = 0; loop < nparams; loop ++ )
-    {
-        cmd.params[loop] = params[loop];
-    }
-    for( ; loop < MOTOR_MAX_PARAMS; loop ++ )
-    {
-        cmd.params[loop] = 0;
-    }
-    
-    ASSERT_ISR( k_msgq_put( &LOCAL_queue, &cmd, K_NO_WAIT ) == 0 );
-}
 
 void motors_main()
 {
@@ -253,9 +272,8 @@ void motors_main()
     
     while( true )
     {
-        Motor_cmd* cmd = NULL;
-        k_msgq_get(&LOCAL_queue, &cmd, K_FOREVER );
-        
+
+        const Motor_cmd* cmd = motor_queue_get( K_FOREVER );
         LOG_INF("Motor execute %d", cmd->opcode );
         
         switch( cmd->opcode )

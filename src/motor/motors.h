@@ -3,7 +3,7 @@
 #include "../main.h"
 
 
-#define MOTOR_MAX_ACC_CM_SS   50.0   // cm per sec^2
+#define MOTOR_MAX_ACC_CM_SS   20.0   // cm per sec^2
 #define MOTOR_MAX_SPEED_CM_S  10.0  // cm per sec
 
 #define MOTOR_MAX_PARAMS 3

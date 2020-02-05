@@ -34,7 +34,10 @@ Motor related
 | UART1-TX        |  PA9              | (gre) |
 | UART1-RX        |  PA10             | (yel) |
 | IR-Sensor       |  PA2 - ISR2       | (blu) |
-| Emergency stop  |  PA1 - ISR1       |  |
+| Emergency stop  |  PA1 - ISR1       |       |  
+| I2C1 Data       | PB7 - I2C1_SDA    |       |
+| I2C1 Clock      | PB6 - I2C1_SCL    |       |
+
 
 **Big motor**
 

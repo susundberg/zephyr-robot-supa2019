@@ -14,10 +14,6 @@ static TIM_HandleTypeDef LOCAL_tim_right;
 
 #define PWM_TIM_PERIOD_CYCLES 1000
 
-// motor test 1 10 5 -- yielded around 10506 ticks -> 5 rounds - each is 22.62 cm long -> 5*(22.62) / 10506 = 0.0107653 CM / tick
-
-static const float MOTOR_TICKS_TO_CM       = 0.0107653f;
-static const float MOTOR_CM_PER_SEC_TO_PWM = 30.0;
 
 
 LOG_MODULE_REGISTER( motor_tim );
@@ -109,31 +105,35 @@ uint32_t LOCAL_offset[2];
 
 void motor_timers_abort()
 {
-  HAL_CHECK( HAL_TIM_Base_Stop(&LOCAL_tim_left) );
-  HAL_CHECK( HAL_TIM_Base_Stop(&LOCAL_tim_right) );    
+  HAL_CHECK( HAL_TIM_Base_Stop(&LOCAL_tim_pwm) ); 
 }
+
+
+static const float MOTOR_MIN_TRAVEL_SPEED = 0.5f;
 
 uint32_t motor_timers_set_speed( uint32_t motor, float speed_cm_per_sec )
 {
-   float pwm_target_f  = ( speed_cm_per_sec*MOTOR_CM_PER_SEC_TO_PWM + 0.5f );
-   
-   ASSERT( motor < 2 );
-   
    uint32_t pwm_target = 0;
    
-   if UNLIKELY( pwm_target_f >= PWM_TIM_PERIOD_CYCLES ) 
-   {
-       pwm_target = PWM_TIM_PERIOD_CYCLES;
-   }
-   else if UNLIKELY( pwm_target_f <= 0 )
+   if ( speed_cm_per_sec <= MOTOR_MIN_TRAVEL_SPEED )
    {
        pwm_target = 0;
    }
    else
    {
-       pwm_target = (uint32_t)pwm_target_f;
+        float pwm_target_f  = speed_cm_per_sec*MOTOR_CM_PER_SEC_TO_PWM + MOTOR_PWM_OFFSET + 0.5f;
+
+        if UNLIKELY( pwm_target_f >= PWM_TIM_PERIOD_CYCLES ) 
+        {
+            pwm_target = PWM_TIM_PERIOD_CYCLES;
+        }
+        else
+        {
+            pwm_target = (uint32_t)pwm_target_f;
+        }  
    }
-   
+
+    ASSERT( motor < 2 );
    __HAL_TIM_SET_COMPARE( &LOCAL_tim_pwm, LOCAL_pwm_channels[ motor ], pwm_target );
    return pwm_target;
 }

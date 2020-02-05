@@ -1,5 +1,12 @@
-import supalib
+
+import os
 import importlib
+import sys
+
+
+sys.path.append( os.path.dirname(os.path.realpath(__file__)) )
+
+import supalib
 
 importlib.reload( supalib )
 supalib.init()
@@ -63,7 +70,9 @@ def create_bottom_wings( WING_OFFSET_X = 25, BASE_THICK = 4.0 ):
         b = supalib.create_box( (WING_SIZE_X-WING_OFFSET_X, WING_SIZE_Y, BASE_THICK ), place = (WING_OFFSET_X,-WING_SIZE_Y/2.0,0) )
         b_hol1 = supalib.create_cyl( (BOLT_LOC,0,-TOLE), size_z = 2*BASE_THICK, radius = BOLT_RAD )
         m1 =  supalib.create_cut( b,  b_hol1 )
-        return m1
+        tr1 = supalib.create_triangle( 10, 2, 10, place=( WING_OFFSET_X + 10 + 1.0, -8, 0.0, BASE_THICK ), rotate=(0,0,1,180) )
+        tr2 = supalib.create_triangle( 10, 2, 10, place=( WING_OFFSET_X + 10 + 1.0, +8, 0.0, BASE_THICK ), rotate=(0,0,1,180) )
+        return supalib.create_union( (m1, tr1, tr2 ) )
     
     boxes = []
     for angle in ( 0, ANGLE, -ANGLE ):
@@ -72,8 +81,8 @@ def create_bottom_wings( WING_OFFSET_X = 25, BASE_THICK = 4.0 ):
         boxes.append( b )
         
     boxes = supalib.create_union( boxes )
-    cut = supalib.create_cyl( (0,0,-TOLE), size_z = 2*BASE_THICK, radius = WING_SIZE_X )
-    boxes = supalib.create_intersection( (boxes, cut) )
+    cut = supalib.create_cyl( (0,0,-TOLE), size_z = 40, radius = WING_SIZE_X )
+    boxes = supalib.create_intersection( (boxes, cut), name="Wings" )
     return boxes
     
  
@@ -82,6 +91,12 @@ main_bottom = crete_bottom_plate()
 main_bottom = supalib.relocate( main_bottom, (0,0,EPS) )
 wings = create_bottom_wings()
 
+
+part = supalib.create_union( (main_bottom, wings) )
+App.ActiveDocument.recompute()
+
+part = supalib.create_chamfer( part, radius=1.0, edges=[ part.Shape.Edges[x] for x in [ 13, 1,  25 ] ] )
+part.Label = "Motor mount"
 pads1 = create_bottom_wings( BASE_THICK = 10.0, WING_OFFSET_X = 30.0 )
 pads1 = supalib.relocate( pads1, (0,0, -20) )
 pads1.Label = "Pads Wings"
@@ -90,13 +105,10 @@ pads2 = create_round_pad( BASE_THICK = 10.0 )
 pads2 = supalib.relocate( pads2, (0,0, -20) )
 pads2.Label = "Pads Round"
 
-part = supalib.create_union( (main_bottom, wings), name="Motor mount" )
-App.ActiveDocument.recompute()
 
 supalib.creta_mesh_from( part )
 supalib.creta_mesh_from( pads1 )
 supalib.creta_mesh_from( pads2 )
-
 
 App.ActiveDocument.recompute()
 Gui.SendMsgToActiveView("ViewFit")

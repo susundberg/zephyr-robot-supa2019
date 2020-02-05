@@ -3,10 +3,15 @@
 #include "../main.h"
 
 
-#define MOTOR_MAX_ACC_CM_SS   20.0   // cm per sec^2
-#define MOTOR_MAX_SPEED_CM_S  10.0  // cm per sec
+#define MOTOR_MAX_ACC_CM_SS   20.0f   // cm per sec^2
+#define MOTOR_MAX_SPEED_CM_S  7.5f  // cm per sec
+#define MOTOR_MAX_PARAMS      3
 
-#define MOTOR_MAX_PARAMS 3
+
+// motor test 1 10 5 -- yielded around 10506 ticks -> 5 rounds - each is 22.62 cm long -> 5*(22.62) / 10506 = 0.0107653 CM / tick
+#define MOTOR_TICKS_TO_CM       0.0107653f
+#define MOTOR_CM_PER_SEC_TO_PWM 25.0f
+#define MOTOR_PWM_OFFSET        150.0f
 
 
 void motor_init();

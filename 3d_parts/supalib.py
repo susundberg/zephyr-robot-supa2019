@@ -3,6 +3,10 @@ import MeshPart
 import FreeCAD as App
 import FreeCADGui as Gui
 
+import math
+
+EPS = 0.01
+
 
 
 def show( source, visible ):
@@ -20,8 +24,19 @@ def make_name( name, prefix ):
     GLOBAL_object_loop += 1
     return name
 
-EPS = 0.01
 
+
+def create_triangle( xsize, ysize, zsize, place=(0,0,0), rotate=(1,0,0,0) ):
+    
+    
+    b1 = create_box( (xsize,ysize,zsize), place=(0,-ysize/2,0 ) )
+    ms = max( xsize, zsize )
+    angle = math.atan( zsize / xsize ) * 180 / math.pi
+    b2 = create_box( (2*ms, 2*ysize, 2*ms), place=(0,-EPS - ysize/2,0), rotate=(0,1,0,-angle) )
+    tr = create_cut( b1, b2 )
+    return relocate( tr, place, rotate )
+    
+    
 def create_cut( to_be_cutted, to_cut_with, name=None ):
     cutted = App.activeDocument().addObject("Part::Cut", make_name( None,"cut" ) )
     cutted.Base = to_be_cutted
@@ -85,11 +100,13 @@ def create_box( size, place=(0,0,0), rotate=(1,0,0,0), name=None ):
     box.Placement = App.Placement( vec_place, vec_rot )
     return box
 
-def create_fillet( obj, fillet_radius = 1.0, name = None ):
+def create_fillet( obj, radius = 1.0, edges = None, name = None ):
     name = make_name( name, "fillet" )
     fillet = App.ActiveDocument.addObject("Part::Fillet", name)
     fillet.Base = obj
-    fillet.Shape = obj.Shape.makeFillet( fillet_radius, obj.Shape.Edges )
+    if edges == None:
+        edges = obj.Shape.Edges
+    fillet.Shape = obj.Shape.makeFillet( radius, edges )
     obj.ViewObject.Visibility = False
     App.ActiveDocument.recompute()
     return fillet
@@ -114,10 +131,19 @@ def create_intersection( shapes, name = None ):
     return comm
 
  
-def relocate( obj, place, rotate=(1,0,0,0) ):
+def relocate( obj, place, rotate=(1,0,0,0), relative=False ):
     vec_place = App.Vector( place[0], place[1], place[2] )
     vec_rot   = App.Rotation( App.Vector(rotate[0],rotate[1],rotate[2]), rotate[3] ) 
-    obj.Placement = App.Placement( vec_place, vec_rot )
+    
+    
+    if relative == True:
+        pos = obj.Placement.toMatrix()
+        new_place = App.Placement( vec_place, vec_rot ).toMatrix() * pos
+        
+    else:
+        new_place = App.Placement( vec_place, vec_rot )
+        
+    obj.Placement = new_place
     return obj
 
 def creta_mesh_from( source, name = "Mesh" ):

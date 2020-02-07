@@ -41,14 +41,15 @@ for angle in ( 0, ANGLE, -ANGLE ):
 ahole = supalib.create_cyl( (0,0,-TOLE), size_z = 2*BASE_THICK, radius = AXEL_RADIUS)
 holes.append( ahole )
 
-bhole1 = supalib.create_cyl( (SIZE_X,0,-TOLE), size_z = 2*BASE_THICK, radius = MBOLT_RAD)
-bhole2 = supalib.create_cyl( (-SIZE_X,0,-TOLE), size_z = 2*BASE_THICK, radius = MBOLT_RAD)
-holes.append( bhole1 )
-holes.append( bhole2 )
+for loop in [1.0, -1.0]:
+    bhole1 = supalib.create_cyl( (loop*SIZE_X,0,-TOLE), size_z = 2*BASE_THICK, radius = MBOLT_RAD)
+    bhole2 = supalib.create_cyl( (loop*(SIZE_X + 0.5*BASE_RADIUS),0,-TOLE), size_z = 2*BASE_THICK, radius = MBOLT_RAD)
+    holes.append( bhole1 )
+    holes.append( bhole2 )
 
 
 part  = supalib.create_cut( part, supalib.create_union( holes ) )
-part = supalib.create_fillet( part, radius=1.0, edges = ( part.Shape.Edges[24], ) )
+part = supalib.create_fillet( part, radius=1.0, edges = ( part.Shape.Edges[25], ) )
 App.ActiveDocument.recompute()
 Gui.SendMsgToActiveView("ViewFit")
 

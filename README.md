@@ -35,16 +35,17 @@ Motor related
 | UART1-RX        |  PA10             | (yel) |
 | IR-Sensor       |  PA2 - ISR2       | (blu) |
 | Emergency stop  |  PA1 - ISR1       |       |  
-| I2C1 Data       | PB7 - I2C1_SDA    |       |
-| I2C1 Clock      | PB6 - I2C1_SCL    |       |
+| Imu I2C         | PB7 - I2C1_SDA    |       |
+| Imu I2C         | PB6 - I2C1_SCL    |       |
+| Imu isr         | PB5 - ISR5        |       |
 
 
 **Big motor**
 
-| Function        |    Pin           |   Info  |
-| --------------- | ---------------- | ----- |
-| Big Enable      | PA15 - DOUT       |  |
-| Big current meas| PA3 - ADC1-3    |  |
+| Function        |    Pin              |   Info   | Notes       | 
+| --------------- | ------------------- | -------- |             |
+| Big Enable      | PB8 - TIM4_CH3 PWM  | (ora)    | Change TODO |
+| Big current meas| PA3 - ADC1-3        |          | TODO        |
 
 
 ## Motor control

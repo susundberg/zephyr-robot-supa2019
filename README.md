@@ -42,10 +42,12 @@ Motor related
 
 **Big motor**
 
+
 | Function        |    Pin              |   Info   | Notes       | 
-| --------------- | ------------------- | -------- |             |
+| --------------- | ------------------- | -------- | ----------- |
 | Big Enable      | PB8 - TIM4_CH3 PWM  | (ora)    | Change TODO |
 | Big current meas| PA3 - ADC1-3        |          | TODO        |
+
 
 
 ## Motor control

@@ -25,8 +25,7 @@ void supa_fatal_handler( const char* module, int line );
 
 #define ROUND_INT(x) ( (int)( x + 0.5f) )
 #define UNLIKELY(expr) ( __builtin_expect(!!(expr), 0))
-
-
+#define ABS(x) ((x)<0 ? -(x) : (x))
 
 #define OS_DEFAULT_STACKSIZE 1024
 #define OS_DEFAULT_PRIORITY  7

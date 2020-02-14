@@ -10,7 +10,7 @@
 #include "motors.h"
 #include "motor_ramp.h"
 #include "motor_timers.h"
-
+#include "../pid/pid.h"
 
 LOG_MODULE_REGISTER(motor);
 
@@ -35,9 +35,31 @@ static struct k_msgq LOCAL_queue;
 static Motor_cmd_done_callback LOCAL_motor_callback = NULL;
 
 #define MOTOR_CONTROL_LOOP_MS 10
-static const float MOTOR_CONTROL_LOOP_MS_P1 = 1000.0f / MOTOR_CONTROL_LOOP_MS;
-#define MOTOR_MAX_CONTROL_SPEED_CM_PER_SEC 1000.0f
+#define MOTOR_PWM_SANITY_CHECK_LIMIT 10000
 
+static PidController LOCAL_pid[2];
+
+
+void motors_pid_init()
+{
+    // Measured initially, Pu = 75, Tu = 0.7s
+   static const float Ku = 75.0f;
+   static const float Tu = 0.7f;
+   static const float PID_COEFFS[3] = { 0.6f*Ku , 1.2f*Ku/Tu, 3.0f*Ku*Tu / 40.0f };
+   
+   for ( int loop = 0; loop < 2; loop ++ )
+   {
+       pid_control_setup( &LOCAL_pid[loop], PID_COEFFS[0], PID_COEFFS[1], PID_COEFFS[2], MOTOR_CONTROL_LOOP_MS / 1000.0f );
+   }
+}
+
+void motors_set_pid( int motor, const float* coeff )
+{
+    LOCAL_pid[motor].coeff_p = coeff[0];
+    LOCAL_pid[motor].coeff_i = coeff[1];
+    LOCAL_pid[motor].coeff_d = coeff[2];
+    
+}
 
 void motors_set_callback( Motor_cmd_done_callback callback )
 {
@@ -163,8 +185,11 @@ static void motor_cmd_test( const Motor_cmd* cmd )
         }
         
         uint32_t motor_pwm[2];
+        
         for ( int loop = 0; loop < 2; loop ++ )
-           motor_pwm[loop] = motor_timers_set_speed( loop, speed_target );
+        {
+           motor_pwm[loop] = motor_timers_set_speed( loop, speed_target*25.0f );
+        }
 
         k_sleep( time_diff_sec * 1000 );
         
@@ -196,10 +221,12 @@ static void motor_cmd_drive( float* distances, float max_speed)
     
     Motor_cmd_type end_event; 
     
+    
     LOG_INF("Drive %d %d mm", ROUND_INT(distances[0]*10.0f), ROUND_INT(distances[1]*10.0f) );
 
     for ( int loop = 0; loop < 2; loop ++ )
     {
+        pid_control_clear( LOCAL_pid[loop] );
         
         bool reverse = false;    
         if ( distances[loop] < 0 )
@@ -239,22 +266,23 @@ static void motor_cmd_drive( float* distances, float max_speed)
         int mot_pwm[2];
         for ( int loop = 0; loop < 2; loop ++ )
         {
-            float pos_cm   = motor_ramp_location( &LOCAL_target[loop], time_sec );
-            float speed_cm_per_sec = (pos_cm - position_cm[loop])*MOTOR_CONTROL_LOOP_MS_P1;
-
-            if ( speed_cm_per_sec > MOTOR_MAX_CONTROL_SPEED_CM_PER_SEC || speed_cm_per_sec < -MOTOR_MAX_CONTROL_SPEED_CM_PER_SEC )
-            {
-                FATAL_ERROR("Motor %d speed invalid %d!", loop, (int)speed_cm_per_sec );
-                break;
-            }
-            mot_pwm[ loop ] = motor_timers_set_speed( loop, speed_cm_per_sec );
-            max_pwm[ loop ] = MAX( max_pwm[loop], mot_pwm[loop] );
+            float position_target_cm   = motor_ramp_location( &LOCAL_target[loop], time_sec );
             
+            float pwm_out = pid_control_step( &LOCAL_pid[loop], position_target_cm, position_cm[loop]);
+            
+            if ( ABS(pwm_out) > MOTOR_PWM_SANITY_CHECK_LIMIT ) 
+            {
+                FATAL_ERROR("Motor %d pwm invalid %d!", loop, (int)pwm_out );
+                break;                
+            }
+ 
+            mot_pwm[ loop ] = motor_timers_set_speed( loop, pwm_out );
+            max_pwm[ loop ] = MAX( max_pwm[loop], mot_pwm[loop] );
             
             // printf("T=%0.1f - pos: %0.1f -- speed: %0.1f pwm %d\n", time_sec, pos_cm, speed_cm_per_sec,  motor_pwm ); 
         }
         
-        printk("PWM %d %d\n", mot_pwm[0], mot_pwm[1] );
+        // printk("PWM %d %d\n", mot_pwm[0], mot_pwm[1] );
         
         const Motor_cmd* cmd = motor_queue_get( MOTOR_CONTROL_LOOP_MS );
         
@@ -309,6 +337,7 @@ void motors_main()
     motor_timers_init();
     motor_control_init();
     motors_bumber_init();
+    motors_pid_init();
     
     LOG_INF("Motor app started!");
     

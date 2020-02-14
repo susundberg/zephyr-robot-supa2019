@@ -219,18 +219,22 @@ static int cmd_motor_test(const struct shell *shell, size_t argc, char **argv)
     motors_send_cmd( MOTOR_CMD_TEST, params, 3 );
     return 0; 
 }
-extern float GLOBAL_pid_P;
+
 static int cmd_motor_pid(const struct shell *shell, size_t argc, char **argv)
 {
-   int params[1];
+   int params[3];
    ARG_UNUSED(argc);
-   if ( parse_i32(argv[1], &params[0]) )
-   {
+    if ( parse_i32(argv[1], &params[0]) || parse_i32(argv[2], &params[1]) || parse_i32(argv[3], &params[2] ) )
+    {
+
         SHE_ERR("Invalid arguments.\n");
         return -EINVAL;
-   }
-   GLOBAL_pid_P = params[0]/10.0f;
-   SHE_INF("Setting PID=%d", params[0] );
+    }
+    float params_flt[3] = { params[0] / 100.0f, params[1] / 100.0f, params[2] / 100.0f }; 
+    
+   SHE_INF("Setting PID=%d %d %d /100", params[0],  params[2], params[1] );
+   motors_set_pid( 0, params_flt );
+   motors_set_pid( 1, params_flt );
    return 0;
 }
 

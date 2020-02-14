@@ -108,34 +108,30 @@ void motor_timers_abort()
   HAL_CHECK( HAL_TIM_Base_Stop(&LOCAL_tim_pwm) ); 
 }
 
-float GLOBAL_pid_P = 25.0f;
-static const float MOTOR_MIN_TRAVEL_SPEED = 0.5f;
 
-uint32_t motor_timers_set_speed( uint32_t motor, float speed_cm_per_sec )
+uint32_t motor_timers_set_speed( uint32_t motor, float pwm_target )
 {
-   uint32_t pwm_target = 0;
+   uint32_t pwm_target_int = 0;
    
-   if ( speed_cm_per_sec <= MOTOR_MIN_TRAVEL_SPEED )
+   if UNLIKELY( pwm_target <= MOTOR_PWM_OFFSET )
    {
-       pwm_target = 0;
+       pwm_target_int = 0;
    }
    else
    {
-        float pwm_target_f  = speed_cm_per_sec*GLOBAL_pid_P + MOTOR_PWM_OFFSET + 0.5f;
-
-        if UNLIKELY( pwm_target_f >= PWM_TIM_PERIOD_CYCLES ) 
+        if UNLIKELY( pwm_target >= PWM_TIM_PERIOD_CYCLES ) 
         {
-            pwm_target = PWM_TIM_PERIOD_CYCLES;
+            pwm_target_int = PWM_TIM_PERIOD_CYCLES;
         }
         else
         {
-            pwm_target = (uint32_t)pwm_target_f;
+            pwm_target_int = (uint32_t)(pwm_target + 0.5f);
         }  
    }
 
-    ASSERT( motor < 2 );
-   __HAL_TIM_SET_COMPARE( &LOCAL_tim_pwm, LOCAL_pwm_channels[ motor ], pwm_target );
-   return pwm_target;
+   ASSERT( motor < 2 );
+   __HAL_TIM_SET_COMPARE( &LOCAL_tim_pwm, LOCAL_pwm_channels[ motor ], pwm_target_int );
+   return pwm_target_int;
 }
 
 

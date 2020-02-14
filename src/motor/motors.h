@@ -19,7 +19,7 @@ void motors_abort();
 void motors_send_cmd( uint32_t opcode, void* params, uint32_t nparams );
 void motors_bumber_init();
 void motors_control_function( bool running );
-
+void motors_set_pid( int motor,  const float* coeffs );
 
 typedef enum
 {

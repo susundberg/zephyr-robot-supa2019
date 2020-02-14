@@ -9,9 +9,6 @@
 
 LOG_MODULE_REGISTER(ir);
 
-static const int       LOCAL_pin_pins[2] = { DT_GPIO_KEYS_IR_INPUT_GPIOS_PIN, DT_GPIO_LEDS_IR_OUTPUT_GPIOS_PIN };
-static struct device*  LOCAL_pin_dev[2];
-static const char*     LOCAL_pin_names[] = { DT_GPIO_KEYS_IR_INPUT_GPIOS_CONTROLLER, DT_GPIO_LEDS_IR_OUTPUT_GPIOS_CONTROLLER };
 
 
 #define LOCAL_isr_queue_n 64
@@ -63,8 +60,13 @@ static void ir_signal_isr(struct device* gpiob, struct gpio_callback* cb, u32_t 
 
 
 
-// #define IR_LED_INPUT_FLAGS ( GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |  | GPIO_INT_DEBOUNCE | GPIO_INT_ACTIVE_HIGH )
-#define IR_LED_INPUT_FLAGS ( GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE | GPIO_INT_ACTIVE_HIGH )
+
+
+
+static struct device*  LOCAL_pin_dev[2];
+static const char*     LOCAL_pin_names[] = { DT_GPIO_KEYS_IR_INPUT_GPIOS_CONTROLLER, DT_GPIO_LEDS_IR_OUTPUT_GPIOS_CONTROLLER };
+
+
 
 static void ir_pins_init()
 {
@@ -79,19 +81,20 @@ static void ir_pins_init()
        }
     }
     
-    int loop = 0;
-    RET_CHECK( gpio_pin_configure( LOCAL_pin_dev[loop], LOCAL_pin_pins[loop], IR_LED_INPUT_FLAGS  ) );
     
-    gpio_init_callback( &LOCAL_ir_callback, ir_signal_isr, BIT( LOCAL_pin_pins[loop] ) );
+    int loop = 0;
+    RET_CHECK( gpio_pin_configure( LOCAL_pin_dev[loop], DT_GPIO_KEYS_IR_INPUT_GPIOS_PIN, GPIO_INPUT | DT_GPIO_KEYS_IR_INPUT_GPIOS_FLAGS  ) );
+    
+    gpio_init_callback( &LOCAL_ir_callback, ir_signal_isr, BIT( DT_GPIO_KEYS_IR_INPUT_GPIOS_PIN ) );
 
     RET_CHECK( gpio_add_callback( LOCAL_pin_dev[loop], &LOCAL_ir_callback) );
-    RET_CHECK( gpio_pin_enable_callback( LOCAL_pin_dev[loop], LOCAL_pin_pins[loop]) );
+    RET_CHECK( gpio_pin_interrupt_configure( LOCAL_pin_dev[loop], DT_GPIO_KEYS_IR_INPUT_GPIOS_PIN, GPIO_INT_EDGE_TO_ACTIVE) );
 
     
        
     loop = 1;
-    RET_CHECK ( gpio_pin_configure( LOCAL_pin_dev[loop], LOCAL_pin_pins[loop], GPIO_DIR_OUT ) );
-    RET_CHECK ( gpio_pin_write( LOCAL_pin_dev[loop], LOCAL_pin_pins[loop], 0 )  );    
+    RET_CHECK ( gpio_pin_configure( LOCAL_pin_dev[loop], DT_GPIO_LEDS_IR_OUTPUT_GPIOS_PIN, GPIO_OUTPUT | DT_GPIO_LEDS_IR_OUTPUT_GPIOS_FLAGS ) );
+    RET_CHECK ( gpio_pin_set( LOCAL_pin_dev[loop], DT_GPIO_LEDS_IR_OUTPUT_GPIOS_PIN, 0 )  );    
     
     
     
@@ -212,7 +215,7 @@ static void ir_receiver_main()
           code_n = 0;
       }
           
-      gpio_pin_write( LOCAL_pin_dev[1], LOCAL_pin_pins[1], loop % 2);
+      gpio_pin_set( LOCAL_pin_dev[1], DT_GPIO_LEDS_IR_OUTPUT_GPIOS_PIN, loop % 2);
       loop += 1;
       
    }

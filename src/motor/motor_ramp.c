@@ -9,22 +9,23 @@
 
 LOG_MODULE_REGISTER( motor_ramp );
 
-#define MINDIFF 0.00001
+#define MINDIFF 0.00001f
+
 
 static float sqrtf(float square)
 {
     float root, last, diff;
 
-    root = square / 3.0;
-    diff = 1;
+    root = square / 3.0f;
+    diff = 1.0f;
 
-    if (square <= 0) {
-        return 0;
+    if (square <= 0.0f) {
+        return 0.0f;
     }
 
     do {
         last = root;
-        root = (root + square / root) / 2.0;
+        root = (root + square / root) / 2.0f;
         diff = root - last;
     } while (diff > MINDIFF || diff < -MINDIFF);
 
@@ -86,6 +87,13 @@ static void motor_ramp_acc_init( Motor_ramp_acc* acc, float max_acc, float speed
 
 void motor_ramp_init( Motor_ramp* ramp, float max_acc, float max_speed, float distance )
 {
+    
+    memset( ramp, 0x00, sizeof(Motor_ramp));
+    if ( distance < 0.1f )
+    {
+        LOG_INF("Distance is smaller than least, assuming zero.");
+        return;
+    }
     
     float dist_max_speed = motor_ramp_acc_solve_max_speed( distance, max_acc );
     float dist_const_speed; 

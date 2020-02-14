@@ -11,6 +11,9 @@ typedef enum
     KEY_LEFT = 0xe418,
     KEY_RIGHT = 0xe01c,
     KEY_FUNCTION = 0xd628,
+    KEY_AUTO_ON  = 0xe31c,
+    KEY_POWER    = 0x8478,
+    KEY_PLAY     = 0xc13c,
     
 } IR_keycode;
 

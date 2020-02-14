@@ -1,0 +1,48 @@
+
+Possible features:
+ - Big motor current measurement 
+ - MPU6050 for detect drifting
+ - Analog measurement of battery voltage
+ - Output led to signal state
+ - Watchdog
+ 
+
+
+
+31/01/2020:
+
+* The PWM adjustment should be a*x + b rather than a*x -- since at PWM 10% it does not move at all. It should yield better performance at lower speeds.
+* The Max speed should be re-measured / lowered. It seems like the current max speed cannot be gone over that much -- wheels are unable to catch up the lost distance (due bad pwm, see above)
+* The bumbers should ignore events when backing up -- it seemed like an issue.
+
+
+speed: 0.0 0.0 - target: 3.0
+speed: 1.4 2.7 - target: 4.0
+speed: 4.0 4.7 - target: 5.0
+speed: 5.9 6.6 - target: 6.0
+
+-->> Speed 4 = 0 - pwm 120
+
+
+
+
+30/01/2020:
+
+Testing bumbers by hitting them meny times:
+
+[14:39:30:935] I: Ignore bumber hit: 0x100␍␊
+[14:39:30:935] I: Motor execute 4␍␊
+[14:39:30:940] E: ***** BUS FAULT *****␍␊
+[14:39:30:940] E:   Imprecise data bus error␍␊
+[14:39:30:940] E: r0/a1:  0x00000000  r1/a2:  0x00000000  r2/a3:  0x00000004␍␊
+[14:39:30:940] E: r3/a4:  0x00000004 r12/ip:  0x00000000 r14/lr:  0x0800205d␍␊
+[14:39:30:944] E:  xpsr:  0x81000027␍␊
+[14:39:30:945] E: Faulting instruction address (r15/pc): 0x08007448␍␊
+[14:39:30:958] E: >>> ZEPHYR FATAL ERROR 0: CPU exception on CPU 0␍␊
+[14:39:30:958] E: Fault during interrupt handling␍␊
+[14:39:30:961] ␍␊
+[14:39:30:961] E: Current thread: 0x2000025c (unknown)␍␊
+
+POST MORTEM: Seems to be due k_malloc inside ISR, changing to pre-allocated queue maybe fixed the issue
+
+

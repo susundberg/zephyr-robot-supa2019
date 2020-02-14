@@ -32,29 +32,33 @@ typedef enum
 static Motor_cmd __aligned(4) LOCAL_queue_buffer[ LOCAL_queue_size ];
 static struct k_msgq LOCAL_queue;
 
+static Motor_cmd_done_callback LOCAL_motor_callback = NULL;
 
 #define MOTOR_CONTROL_LOOP_MS 10
 static const float MOTOR_CONTROL_LOOP_MS_P1 = 1000.0f / MOTOR_CONTROL_LOOP_MS;
 #define MOTOR_MAX_CONTROL_SPEED_CM_PER_SEC 1000.0f
-Motor_state GLOBAL_motor_state;
 
 
-void motors_send_cmd( uint32_t opcode, uint32_t* params, uint32_t nparams )
+void motors_set_callback( Motor_cmd_done_callback callback )
+{
+    if ( callback != NULL )
+    {
+       ASSERT( LOCAL_motor_callback == NULL );
+    }
+    LOCAL_motor_callback = callback ;
+}
+
+void motors_send_cmd( uint32_t opcode, void* params, uint32_t nparams )
 {
 
-    static Motor_cmd cmd;
-    
-    cmd.opcode = opcode;
-    int loop;
+    Motor_cmd cmd; 
+    ASSERT_ISR( sizeof(float) == sizeof(uint32_t) );
     ASSERT_ISR( nparams <= MOTOR_MAX_PARAMS );
-    for ( loop = 0; loop < nparams; loop ++ )
-    {
-        cmd.params[loop] = params[loop];
-    }
-    for( ; loop < MOTOR_MAX_PARAMS; loop ++ )
-    {
-        cmd.params[loop] = 0;
-    }
+    
+    memset( &cmd, 0x00, sizeof(cmd));
+
+    cmd.opcode = opcode;
+    memcpy( cmd.params, params, sizeof(uint32_t)*nparams );
     
     ASSERT_ISR( k_msgq_put( &LOCAL_queue, &cmd, K_NO_WAIT ) == 0 );
 }
@@ -77,7 +81,7 @@ static const Motor_cmd* motor_queue_get( uint32_t wait_time )
 }
 
 
-void motor_abort()
+void motors_abort()
 {
     motor_timers_abort();
 }
@@ -172,7 +176,9 @@ static void motor_cmd_test( const Motor_cmd* cmd )
         
         memcpy( pos_old, position_cm, sizeof(float)*2 );
         
-        printf("T=%0.1f - pos: %0.1f %0.1f -- speed: %0.1f %0.1f - target: %0.1f - pwm %d %d\n", time_sec, position_cm[0], position_cm[1], speed_obs[0], speed_obs[1], speed_target, motor_pwm[0], motor_pwm[1] ); 
+        printf("T=%0.1f - pos: %0.1f %0.1f -- speed: %0.1f %0.1f - target: %0.1f - pwm %d %d\n", 
+               (double)time_sec, (double)position_cm[0], (double)position_cm[1], (double)speed_obs[0], (double)speed_obs[1], 
+               (double)speed_target, motor_pwm[0], motor_pwm[1] ); 
     }
     
     motor_cmd_stop(NULL);
@@ -182,28 +188,27 @@ static void motor_cmd_test( const Motor_cmd* cmd )
 }
 
 
-static void motor_cmd_drive( const Motor_cmd* cmd )
+static void motor_cmd_drive( float* distances, float max_speed)
 {
     static Motor_ramp LOCAL_target[2];
     s64_t drive_start_ticks;
     float position_cm[2];
     
-
-    uint32_t flags = (uint32_t) cmd->params[2];
+    Motor_cmd_type end_event; 
     
-    LOG_INF("Drive %d %d flags 0x%X", cmd->params[0], cmd->params[1], flags );
+    LOG_INF("Drive %d %d mm", ROUND_INT(distances[0]*10.0f), ROUND_INT(distances[1]*10.0f) );
 
     for ( int loop = 0; loop < 2; loop ++ )
     {
-        int32_t pos = cmd->params[loop];
+        
         bool reverse = false;    
-        if ( pos < 0 )
+        if ( distances[loop] < 0 )
         { 
             reverse = true;
-            pos = pos*-1;
+            distances[loop] = distances[loop]*-1;
         }
         
-        motor_ramp_init( &LOCAL_target[loop], MOTOR_MAX_ACC_CM_SS, MOTOR_MAX_SPEED_CM_S, pos );
+        motor_ramp_init( &LOCAL_target[loop], MOTOR_MAX_ACC_CM_SS, max_speed, distances[loop] );
         motor_control_enable( loop, reverse );
     }    
             
@@ -214,7 +219,9 @@ static void motor_cmd_drive( const Motor_cmd* cmd )
     drive_time_start( &drive_start_ticks );
     
     float drive_stop_sec  = MAX( motor_ramp_fulltime( &LOCAL_target[0] ) , motor_ramp_fulltime( &LOCAL_target[1] ) );
+    LOG_INF("Expected drive time: %d s", ROUND_INT(drive_stop_sec));
     
+    uint32_t max_pwm[2] = { 0, 0};
     while(1)
     {
         
@@ -224,11 +231,12 @@ static void motor_cmd_drive( const Motor_cmd* cmd )
         if ( time_sec > drive_stop_sec )
         {
             LOG_INF("Motor ramp fulltime (%d) reached, stop!", (int)drive_stop_sec  );
+            end_event = MOTOR_CMD_EV_DONE;
             break;
         }
         
         motor_timers_get_location( position_cm );
-        
+        int mot_pwm[2];
         for ( int loop = 0; loop < 2; loop ++ )
         {
             float pos_cm   = motor_ramp_location( &LOCAL_target[loop], time_sec );
@@ -239,25 +247,60 @@ static void motor_cmd_drive( const Motor_cmd* cmd )
                 FATAL_ERROR("Motor %d speed invalid %d!", loop, (int)speed_cm_per_sec );
                 break;
             }
-            motor_timers_set_speed( loop, speed_cm_per_sec );
+            mot_pwm[ loop ] = motor_timers_set_speed( loop, speed_cm_per_sec );
+            max_pwm[ loop ] = MAX( max_pwm[loop], mot_pwm[loop] );
             
             
             // printf("T=%0.1f - pos: %0.1f -- speed: %0.1f pwm %d\n", time_sec, pos_cm, speed_cm_per_sec,  motor_pwm ); 
         }
+        
+        printk("PWM %d %d\n", mot_pwm[0], mot_pwm[1] );
         
         const Motor_cmd* cmd = motor_queue_get( MOTOR_CONTROL_LOOP_MS );
         
         if ( cmd != NULL )
         {
             LOG_INF("Command %d received while driving, stopping!", cmd->opcode );
+            
+            if ( cmd->opcode != MOTOR_CMD_EV_BUMBER )
+            {
+               end_event = MOTOR_CMD_EV_CANCELLED; 
+            }
+            else
+            {
+                end_event = MOTOR_CMD_EV_BUMBER;
+            }
             break;
         }
     }
     // make sure speed is zero.
     motor_cmd_stop( NULL );
-    LOG_INF("Final position %d %d (mm)", (int)(position_cm[0]*10.0f), (int)(position_cm[1]*10.0f) ); 
+    motor_timers_get_location( position_cm );
+    int pos_diff[2] =  { ROUND_INT( (distances[0] - position_cm[0])*100.0f ), 
+                         ROUND_INT( (distances[1] - position_cm[1])*100.0f ) };
+        
+    LOG_INF("Final position %d %d (mm) - D %d %d (1/10 mm) - max pwm: %d %d", ROUND_INT(position_cm[0]*10.0f), ROUND_INT(position_cm[1]*10.0f),
+                                                  pos_diff[0], pos_diff[1], max_pwm[0], max_pwm[1] ); 
+
+    if ( LOCAL_motor_callback != NULL )
+    {
+        int32_t position_cm_int[2] = { ROUND_INT( position_cm[0] ), ROUND_INT( position_cm[1] ) };
+        LOCAL_motor_callback ( end_event, position_cm_int, 2 );
+    }
 }
 
+
+static void motor_cmd_rotate( float angle )
+{
+    float to_drive[2] = {0,0} ;
+    float rotating_wheel = DRIVE_CM_PER_ANGLE*angle;
+    
+    // rotate clockwise, right wheel not moe
+    to_drive[0] =   rotating_wheel;
+    to_drive[1] =  -rotating_wheel;
+    
+    motor_cmd_drive( to_drive, MOTOR_MAX_SPEED_CM_S*0.75f );
+}
 
 void motors_main()
 {
@@ -265,10 +308,12 @@ void motors_main()
 
     motor_timers_init();
     motor_control_init();
-    motor_bumber_init();
+    motors_bumber_init();
     
     LOG_INF("Motor app started!");
     
+    
+    float param_help[ MOTOR_MAX_PARAMS ];
     
     while( true )
     {
@@ -280,20 +325,21 @@ void motors_main()
         {
             
             case MOTOR_CMD_DRIVE:
-                GLOBAL_motor_state = MOTOR_STATUS_DRIVE;
-                motor_cmd_drive( cmd );
-                GLOBAL_motor_state = MOTOR_STATUS_IDLE;
+                memcpy( param_help, cmd->params, sizeof(float)*MOTOR_MAX_PARAMS);
+                motor_cmd_drive( param_help, param_help[2] );
+                break;
+            
+            case MOTOR_CMD_ROTATE:
+                memcpy( param_help, cmd->params, sizeof(float)*1);
+                motor_cmd_rotate( param_help[0] );
                 break;
                 
             case MOTOR_CMD_TEST:
-                GLOBAL_motor_state = MOTOR_STATUS_DRIVE;
                 motor_cmd_test( cmd );
-                GLOBAL_motor_state = MOTOR_STATUS_IDLE;
                 break;
 
             case MOTOR_CMD_STOP:
                 motor_cmd_stop( cmd );
-                GLOBAL_motor_state = MOTOR_STATUS_IDLE;
                 break;
                 
             case MOTOR_CMD_EV_BUMBER:

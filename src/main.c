@@ -10,6 +10,7 @@
  * This app uses PWM[0].
  */
 
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -32,10 +33,12 @@
 
 #define SUPA_MODULE "mai"
 #include "main.h"
-#include "boot.h"
 #include "motor/motors.h"
 #include "ir_receiver/ir_receiver.h"
+#include "logic/logic.h"
+
 #include "utils/utils.h"
+#include "utils/boot.h"
 
 LOG_MODULE_REGISTER(app);
 
@@ -55,11 +58,13 @@ void supa_fatal_handler( const char* module, int line )
   
 static void ircmd_move( IR_keycode code, bool repeated );
 static void ircmd_function( IR_keycode code, bool repeated );
+static void ircmd_auto_on( IR_keycode code, bool repeated );
+static void ircmd_power( IR_keycode code, bool repeated );
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 {
     ARG_UNUSED(esf);
-    motor_abort();
+    motors_abort();
     LOG_PANIC();
     sys_reboot( SYS_REBOOT_COLD );
     CODE_UNREACHABLE;
@@ -71,7 +76,7 @@ void main(void)
     struct device* dev;
 
     dev = device_get_binding( DT_ALIAS_LED0_GPIOS_CONTROLLER );
-    gpio_pin_configure(dev, DT_ALIAS_LED0_GPIOS_PIN, GPIO_DIR_OUT);
+    RET_CHECK( gpio_pin_configure( dev, DT_ALIAS_LED0_GPIOS_PIN, GPIO_OUTPUT | DT_ALIAS_LED0_GPIOS_FLAGS ) );
     
     
     ir_receiver_register( KEY_VOL_UP, ircmd_move );
@@ -79,10 +84,13 @@ void main(void)
     ir_receiver_register( KEY_LEFT, ircmd_move);
     ir_receiver_register( KEY_RIGHT, ircmd_move );    
     ir_receiver_register( KEY_FUNCTION, ircmd_function );
+    ir_receiver_register( KEY_AUTO_ON, ircmd_auto_on );
+    ir_receiver_register( KEY_POWER, ircmd_power );
+    
     LOG_INF("Robot control task started!");
     while (1) 
     {
-      gpio_pin_write(dev, DT_ALIAS_LED0_GPIOS_PIN, cnt % 2);
+      gpio_pin_set(dev, DT_ALIAS_LED0_GPIOS_PIN, cnt % 2);
       cnt++;
       k_sleep( 250 );
     }
@@ -92,47 +100,72 @@ void main(void)
 
 static void ircmd_move( IR_keycode code, bool repeated )
 {
-    int32_t params[2];    
+    float params[3] = {0};
     
-    static const int MOTOR_TEST_TURN_DISTANCE  = 12.0;
-    static const int MOTOR_TEST_DRIVE_DISTANCE = 20.0;
+    static const float MOTOR_TEST_TURN_ANGLE     = 90.0f;
+    static const float MOTOR_TEST_DRIVE_DISTANCE = 20.0f;
     
     if (repeated)
         return;
     
+    uint32_t opcode = 0;
     switch (code)
     {
         case KEY_VOL_UP:
             params[0] = MOTOR_TEST_DRIVE_DISTANCE;
             params[1] = MOTOR_TEST_DRIVE_DISTANCE;
+            params[2] = MOTOR_MAX_SPEED_CM_S;
+            opcode    = MOTOR_CMD_DRIVE;
             break;
         case KEY_VOL_DOWN:
             params[0] = -MOTOR_TEST_DRIVE_DISTANCE;
             params[1] = -MOTOR_TEST_DRIVE_DISTANCE;
+            params[2] = MOTOR_MAX_SPEED_CM_S;
+            opcode    = MOTOR_CMD_DRIVE;
             break;            
         case KEY_LEFT:
-            params[0] = -MOTOR_TEST_TURN_DISTANCE;
-            params[1] = +MOTOR_TEST_TURN_DISTANCE;
+            params[0] = -MOTOR_TEST_TURN_ANGLE;
+            opcode    = MOTOR_CMD_ROTATE;
             break;        
         case KEY_RIGHT:
-            params[0] = +MOTOR_TEST_TURN_DISTANCE;
-            params[1] = -MOTOR_TEST_TURN_DISTANCE;
+            params[0] = +MOTOR_TEST_TURN_ANGLE;
+            opcode    = MOTOR_CMD_ROTATE;
             break; 
         default:
             ASSERT(0);
             return;
     }
-    motors_send_cmd( MOTOR_CMD_DRIVE, params, 2 );
+    motors_send_cmd( opcode, params, 3 );
 }
 
 static void ircmd_function( IR_keycode code, bool repeated )
 {
-    static bool value = true;
+    static bool value = false;
     
+    if ( repeated ) 
+        return;
+
     value = !value;
-    motor_control_function( value );
+    motors_control_function( value );
 }
 
+static void ircmd_power( IR_keycode code, bool repeated )
+{
+    if ( repeated ) 
+        return;
+
+    motors_send_cmd( MOTOR_CMD_STOP, NULL, 0 );
+    motors_control_function( false ); 
+       
+}
+
+static void ircmd_auto_on( IR_keycode code, bool repeated )
+{
+    if ( repeated ) 
+        return;
+    
+    logic_toggle();
+}
 
 static int cmd_reboot(const struct shell *shell, size_t argc, char **argv)
 {
@@ -186,27 +219,46 @@ static int cmd_motor_test(const struct shell *shell, size_t argc, char **argv)
     motors_send_cmd( MOTOR_CMD_TEST, params, 3 );
     return 0; 
 }
+extern float GLOBAL_pid_P;
+static int cmd_motor_pid(const struct shell *shell, size_t argc, char **argv)
+{
+   int params[1];
+   ARG_UNUSED(argc);
+   if ( parse_i32(argv[1], &params[0]) )
+   {
+        SHE_ERR("Invalid arguments.\n");
+        return -EINVAL;
+   }
+   GLOBAL_pid_P = params[0]/10.0f;
+   SHE_INF("Setting PID=%d", params[0] );
+   return 0;
+}
+
 
 static int cmd_motor_drive(const struct shell *shell, size_t argc, char **argv)
 {
-   int32_t params[2];
-   
-    if ( parse_i32(argv[1], &params[0]) || parse_i32(argv[2], &params[1] ) )
+   int params[3];
+   ARG_UNUSED(argc);
+    if ( parse_i32(argv[1], &params[0]) || parse_i32(argv[2], &params[1]) || parse_i32(argv[3], &params[2] ) )
     {
 
         SHE_ERR("Invalid arguments.\n");
         return -EINVAL;
     }
+    float params_flt[3] = { params[0] / 10.0f, params[1] / 10.0f, params[2] / 10.0f }; 
     
-    motors_send_cmd( MOTOR_CMD_DRIVE, params, 2 );
+    motors_send_cmd( MOTOR_CMD_DRIVE, params_flt, 3 );
     return 0; 
 }
+
+
 
 SYS_INIT( supa_bootloader_check, PRE_KERNEL_1, 0 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_pwm,
-        SHELL_CMD_ARG(drive, NULL, "drive <dist_left> <dist_right>", cmd_motor_drive, 3, 0 ),
+        SHELL_CMD_ARG(drive, NULL, "drive <dist_left mm> <dist_right mm> <speed mm/sec>", cmd_motor_drive, 4, 0 ),
         SHELL_CMD_ARG(stop, NULL, "stop <>", cmd_motor_stop, 1, 0 ),
+        SHELL_CMD_ARG(pid, NULL, "pid <>", cmd_motor_pid, 2, 0 ),                       
         SHELL_CMD_ARG(test, NULL, "test <time_ramp_sec> <time_const_sec> <max_speed cm/sec>", cmd_motor_test, 4, 0 ),
         SHELL_SUBCMD_SET_END
 );

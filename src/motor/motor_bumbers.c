@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(motor_bum);
 static const int   LOCAL_pin_pins[2] = { DT_GPIO_KEYS_BUMBER_LEFT_GPIOS_PIN, DT_GPIO_KEYS_BUMBER_RIGHT_GPIOS_PIN };
 static struct device*     LOCAL_pin_dev[2];
 static const char* LOCAL_pin_names[] = { DT_GPIO_KEYS_BUMBER_LEFT_GPIOS_CONTROLLER, DT_GPIO_KEYS_BUMBER_RIGHT_GPIOS_CONTROLLER };
-
+static const uint32_t LOCAL_pin_flags[2] = { DT_GPIO_KEYS_BUMBER_LEFT_GPIOS_FLAGS, DT_GPIO_KEYS_BUMBER_RIGHT_GPIOS_FLAGS }; 
 static struct gpio_callback LOCAL_callback;
 
 
@@ -38,7 +38,7 @@ static void ISR_bumber_hit(struct device* gpio, struct gpio_callback* cb, u32_t 
 }
 
     
-void motor_bumber_init()
+void motors_bumber_init()
 {
     gpio_init_callback( &LOCAL_callback, ISR_bumber_hit, BIT( LOCAL_pin_pins[0] ) | BIT( LOCAL_pin_pins[1] )  );
     
@@ -52,8 +52,8 @@ void motor_bumber_init()
            return;
        }
        
-       RET_CHECK( gpio_pin_configure( LOCAL_pin_dev[loop], LOCAL_pin_pins[loop], BUMBER_INPUT_FLAGS  ) );
+       RET_CHECK( gpio_pin_configure( LOCAL_pin_dev[loop], LOCAL_pin_pins[loop], GPIO_INPUT | LOCAL_pin_flags[loop]  ) );
        RET_CHECK( gpio_add_callback( LOCAL_pin_dev[loop], &LOCAL_callback) );
-       RET_CHECK( gpio_pin_enable_callback( LOCAL_pin_dev[loop], LOCAL_pin_pins[loop]) );       
+       RET_CHECK( gpio_pin_interrupt_configure( LOCAL_pin_dev[loop], LOCAL_pin_pins[loop], GPIO_INT_EDGE_TO_ACTIVE ) );       
     }
 }

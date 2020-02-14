@@ -13,7 +13,7 @@
 
 	leds {
 		led: led {
-			gpios = <&gpioc 13 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -21,7 +21,7 @@
 	{
 	   compatible = "gpio-leds";
 	   ir_output: ir_output {
-			gpios = <&gpioc 13 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 			label = "ir output"; // Also led blue
 	   };
 
@@ -39,23 +39,23 @@
 	{
 	   compatible = "gpio-leds";
 	   motor_1a: motor_1a {
-			gpios = <&gpiob 12 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
 			label = "motor 1a";
 	   };
 	   motor_1b: motor_1b {
-			gpios = <&gpiob 13 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
 			label = "motor 1b";
 	   };
 	   motor_2a: motor_2a {
-			gpios = <&gpiob 14 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
 			label = "motor 2a";
 	   };
 	   motor_2b: motor_2b {
-			gpios = <&gpiob 15 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 15 GPIO_ACTIVE_HIGH>;
 			label = "motor 2b";
 	   };
 	   motor_fun: motor_fun {
-			gpios = <&gpioa 15 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
 			label = "motor function";
 	   };
 	};
@@ -65,11 +65,11 @@
 		compatible = "gpio-keys";
 		bumber_left: bumber_left {
 			label = "bumber left";
-			gpios = <&gpioa 11 GPIO_INT_ACTIVE_HIGH >;
+			gpios = <&gpioa 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 		bumber_right: bumber_right {
 			label = "bumber right";
-			gpios = <&gpioa 8 GPIO_INT_ACTIVE_HIGH >;
+			gpios = <&gpioa 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 	};
 	

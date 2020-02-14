@@ -19,13 +19,19 @@ static const char* LOCAL_names[] = { DT_GPIO_LEDS_MOTOR_1A_GPIOS_CONTROLLER, DT_
 static const int LOCAL_pins[] = { DT_GPIO_LEDS_MOTOR_1A_GPIOS_PIN, DT_GPIO_LEDS_MOTOR_1B_GPIOS_PIN, 
                          DT_GPIO_LEDS_MOTOR_2A_GPIOS_PIN, DT_GPIO_LEDS_MOTOR_2B_GPIOS_PIN,
                          DT_GPIO_LEDS_MOTOR_FUN_GPIOS_PIN };
+
+                              
+static const int LOCAL_flags[] = { DT_GPIO_LEDS_MOTOR_1A_GPIOS_FLAGS, DT_GPIO_LEDS_MOTOR_1B_GPIOS_FLAGS, 
+                         DT_GPIO_LEDS_MOTOR_2A_GPIOS_FLAGS, DT_GPIO_LEDS_MOTOR_2B_GPIOS_FLAGS,
+                         DT_GPIO_LEDS_MOTOR_FUN_GPIOS_FLAGS };
                          
-static const char LOCAL_init_value[] = { 0, 0, 0, 0, 1};
+                         
+
                
-void motor_control_function( bool value )
+void motors_control_function( bool running )
 {
-    LOG_INF("Setting motor FUN %d", value );
-    RET_CHECK( gpio_pin_write( LOCAL_dev[ FUNCTION_PIN_INDEX ], LOCAL_pins[ FUNCTION_PIN_INDEX ], value ) );
+    LOG_INF("Setting motor FUN %d", running );
+    RET_CHECK( gpio_pin_set( LOCAL_dev[ FUNCTION_PIN_INDEX ], LOCAL_pins[ FUNCTION_PIN_INDEX ], running ) );
     
 }
 
@@ -42,20 +48,21 @@ void motor_control_init()
            return;
        }
        
-       if ( gpio_pin_configure( LOCAL_dev[loop], LOCAL_pins[loop], GPIO_DIR_OUT) != 0 )
+       if ( gpio_pin_configure( LOCAL_dev[loop], LOCAL_pins[loop], GPIO_OUTPUT | LOCAL_flags[loop] ) != 0 )
        {
            FATAL_ERROR("NOCONF: %s-%d", LOCAL_names[loop], LOCAL_pins[loop] );
            return;
        }
        
-       ASSERT( gpio_pin_write( LOCAL_dev[loop], LOCAL_pins[loop], LOCAL_init_value[loop] ) == 0 );
+       ASSERT( gpio_pin_set( LOCAL_dev[loop], LOCAL_pins[loop], 0 ) == 0 );
     }
 }
 
+
 static void set_motor_control( int motor, bool mot_a, bool mot_b )
 {
-    ASSERT( gpio_pin_write( LOCAL_dev[2*motor  ], LOCAL_pins[2*motor], mot_a ) == 0 );
-    ASSERT( gpio_pin_write( LOCAL_dev[2*motor+1], LOCAL_pins[2*motor + 1], mot_b ) == 0 ); 
+    ASSERT( gpio_pin_set( LOCAL_dev[2*motor  ], LOCAL_pins[2*motor], mot_a ) == 0 );
+    ASSERT( gpio_pin_set( LOCAL_dev[2*motor+1], LOCAL_pins[2*motor + 1], mot_b ) == 0 ); 
 }
 
 void motor_control_enable( int motor, bool reverse )

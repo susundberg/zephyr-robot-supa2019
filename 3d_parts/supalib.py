@@ -27,12 +27,12 @@ def make_name( name, prefix ):
 
 
 def create_triangle( xsize, ysize, zsize, place=(0,0,0), rotate=(1,0,0,0) ):
+    """ Create triangle that is triangle in XZ coordinages, with Y beeing the thickness" """
     
-    
-    b1 = create_box( (xsize,ysize,zsize), place=(0,-ysize/2,0 ) )
+    b1 = create_box( (xsize,ysize,zsize), place=(0,0,0 ) )
     ms = max( xsize, zsize )
     angle = math.atan( zsize / xsize ) * 180 / math.pi
-    b2 = create_box( (2*ms, 2*ysize, 2*ms), place=(0,-EPS - ysize/2,0), rotate=(0,1,0,-angle) )
+    b2 = create_box( (2*ms, 2*ysize, 2*ms), place=(0,-EPS,0), rotate=(0,1,0,-angle) )
     tr = create_cut( b1, b2 )
     return relocate( tr, place, rotate )
     

@@ -108,7 +108,7 @@ void motor_timers_abort()
   HAL_CHECK( HAL_TIM_Base_Stop(&LOCAL_tim_pwm) ); 
 }
 
-
+float GLOBAL_pid_P = 25.0f;
 static const float MOTOR_MIN_TRAVEL_SPEED = 0.5f;
 
 uint32_t motor_timers_set_speed( uint32_t motor, float speed_cm_per_sec )
@@ -121,7 +121,7 @@ uint32_t motor_timers_set_speed( uint32_t motor, float speed_cm_per_sec )
    }
    else
    {
-        float pwm_target_f  = speed_cm_per_sec*MOTOR_CM_PER_SEC_TO_PWM + MOTOR_PWM_OFFSET + 0.5f;
+        float pwm_target_f  = speed_cm_per_sec*GLOBAL_pid_P + MOTOR_PWM_OFFSET + 0.5f;
 
         if UNLIKELY( pwm_target_f >= PWM_TIM_PERIOD_CYCLES ) 
         {

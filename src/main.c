@@ -224,15 +224,16 @@ static int cmd_motor_pid(const struct shell *shell, size_t argc, char **argv)
 {
    int params[3];
    ARG_UNUSED(argc);
-    if ( parse_i32(argv[1], &params[0]) || parse_i32(argv[2], &params[1]) || parse_i32(argv[3], &params[2] ) )
-    {
+   
+   if ( parse_i32(argv[1], &params[0]) || parse_i32(argv[2], &params[1]) || parse_i32(argv[3], &params[2] ) )
+   {
 
-        SHE_ERR("Invalid arguments.\n");
-        return -EINVAL;
-    }
-    float params_flt[3] = { params[0] / 100.0f, params[1] / 100.0f, params[2] / 100.0f }; 
+       SHE_ERR("Invalid arguments.\n");
+       return -EINVAL;
+   }
+   float params_flt[3] = { params[0] / 100.0f, params[1] / 100.0f, params[2] / 100.0f }; 
     
-   SHE_INF("Setting PID=%d %d %d /100", params[0],  params[2], params[1] );
+   SHE_INF("Setting PID=%d %d %d /100\n", params[0],  params[1], params[2] );
    motors_set_pid( 0, params_flt );
    motors_set_pid( 1, params_flt );
    return 0;
@@ -262,12 +263,12 @@ SYS_INIT( supa_bootloader_check, PRE_KERNEL_1, 0 );
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_pwm,
         SHELL_CMD_ARG(drive, NULL, "drive <dist_left mm> <dist_right mm> <speed mm/sec>", cmd_motor_drive, 4, 0 ),
         SHELL_CMD_ARG(stop, NULL, "stop <>", cmd_motor_stop, 1, 0 ),
-        SHELL_CMD_ARG(pid, NULL, "pid <>", cmd_motor_pid, 2, 0 ),                       
+        SHELL_CMD_ARG(pid, NULL, "pid <>", cmd_motor_pid, 4, 0 ),                       
         SHELL_CMD_ARG(test, NULL, "test <time_ramp_sec> <time_const_sec> <max_speed cm/sec>", cmd_motor_test, 4, 0 ),
         SHELL_SUBCMD_SET_END
 );
 /* Creating root (level 0) command "demo" */
 SHELL_CMD_REGISTER(motor, &sub_pwm, "MOTOR commands", NULL);
-SHELL_CMD_ARG_REGISTER(restart, NULL, "RESTART system", cmd_reboot, 0, 0);
+SHELL_CMD_ARG_REGISTER(reset, NULL, "RESTART system", cmd_reboot, 0, 0);
 SHELL_CMD_ARG_REGISTER(bootloader, NULL, "REBOOT system to bootloader", cmd_bootloader, 0, 0);
 

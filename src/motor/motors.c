@@ -35,6 +35,7 @@ static struct k_msgq LOCAL_queue;
 static Motor_cmd_done_callback LOCAL_motor_callback = NULL;
 
 #define MOTOR_CONTROL_LOOP_MS 10
+static const float MOTOR_CONTROL_LOOP_DT_S = MOTOR_CONTROL_LOOP_MS / 1000.0f;
 #define MOTOR_PWM_SANITY_CHECK_LIMIT 10000
 
 static PidController LOCAL_pid[2];
@@ -49,7 +50,7 @@ void motors_pid_init()
    
    for ( int loop = 0; loop < 2; loop ++ )
    {
-       pid_control_setup( &LOCAL_pid[loop], PID_COEFFS[0], PID_COEFFS[1], PID_COEFFS[2], MOTOR_CONTROL_LOOP_MS / 1000.0f );
+       pid_control_setup( &LOCAL_pid[loop], PID_COEFFS[0], PID_COEFFS[1], PID_COEFFS[2], MOTOR_CONTROL_LOOP_DT_S );
    }
 }
 
@@ -226,7 +227,7 @@ static void motor_cmd_drive( float* distances, float max_speed)
 
     for ( int loop = 0; loop < 2; loop ++ )
     {
-        pid_control_clear( LOCAL_pid[loop] );
+        pid_control_clear( &LOCAL_pid[loop] );
         
         bool reverse = false;    
         if ( distances[loop] < 0 )
@@ -268,7 +269,9 @@ static void motor_cmd_drive( float* distances, float max_speed)
         {
             float position_target_cm   = motor_ramp_location( &LOCAL_target[loop], time_sec );
             
-            float pwm_out = pid_control_step( &LOCAL_pid[loop], position_target_cm, position_cm[loop]);
+            float pwm_out_flt = pid_control_step( &LOCAL_pid[loop], position_target_cm, position_cm[loop], loop==1 );
+            
+            int pwm_out = ROUND_INT( pwm_out_flt*100 );
             
             if ( ABS(pwm_out) > MOTOR_PWM_SANITY_CHECK_LIMIT ) 
             {

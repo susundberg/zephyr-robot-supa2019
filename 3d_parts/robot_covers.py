@@ -16,15 +16,16 @@ TOLE = 0.2
 COVER_FRONT_XSIZE = 210.0
 COVER_BACK_XSIZE  = 140.0
 COVER_YSIZE       = 245.0
-COVER_HEIGH       = 100.0
 
+SUPPORT_OFFSET = 20.0
+COVER_HEIGH    = 100.0 + SUPPORT_OFFSET
 BASE_THICK  = 1.6
 
 
 SUPPORT_XSIZE = 30.0
 SUPPORT_YSIZE = BASE_THICK
 SUPPORT_ZSIZE = 10.0
-SUPPORT_OFFSET = 20.0
+
 HOLE_RAD       = 3.0/2.0 + TOLE
 
 BATTERY_HOLEX_BACK = 35 
@@ -197,7 +198,7 @@ Gui.SendMsgToActiveView("ViewFit")
 
 
 for item in parts:
-    supalib.creta_mesh_from( item )
+    
 
 
 #supalib.creta_mesh_from( back )

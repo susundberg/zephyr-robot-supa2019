@@ -43,10 +43,8 @@ static PidController LOCAL_pid[2];
 
 void motors_pid_init()
 {
-    // Measured initially, Pu = 75, Tu = 0.7s
-   static const float Ku = 75.0f;
-   static const float Tu = 0.7f;
-   static const float PID_COEFFS[3] = { 0.6f*Ku , 1.2f*Ku/Tu, 3.0f*Ku*Tu / 40.0f };
+    // Measured by trial and error
+   static const float PID_COEFFS[3] = { 30.0f, 60.0f, 0.4f };
    
    for ( int loop = 0; loop < 2; loop ++ )
    {

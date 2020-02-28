@@ -38,8 +38,10 @@ def get_config():
    parser.add_argument("--timeout", type=float, default=0.1 )
    parser.add_argument("--port", default=None, help="prefix to replace on the source")
    parser.add_argument("action")
-   parser.add_argument("--output", default="./data/pid_p{kp:03d}_i{ki:03d}_d{kd:03d}.json.gz")
-   parser.add_argument("--kp", nargs="+", type=int )
+   parser.add_argument("--output", default="./data/pid_p{kp:03.0f}_i{ki:03.0f}_d{kd:02.1f}.json.gz")
+   parser.add_argument("--kp", nargs="+", type=float )
+   parser.add_argument("--ki", nargs="+", type=float )
+   parser.add_argument("--kd", nargs="+", type=float )
    parser.add_argument("--sleep", type=int, default=10)
    
    return parser.parse_args()
@@ -183,12 +185,14 @@ def main( config ):
     
     if config.action == "pid":
         
-        ki = 0
-        kd = 0
+      ki = 0
+      kd = 0
         
-        for kp in config.kp:
+      for kd in config.kd:
+        for ki in config.ki:
+          for kp in config.kp:
             shell.reset()
-            shell.command("motor pid %d %d %d" % (kp*100, kd*100, ki*100) )
+            shell.command("motor pid %d %d %d" % (kp*100, ki*100, kd*100 ) )
             output = shell.command("motor drive 300 300 40")
             output += shell.wait("Final position")
             

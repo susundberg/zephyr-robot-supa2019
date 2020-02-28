@@ -131,7 +131,7 @@ def create_intersection( shapes, name = None ):
     return comm
 
  
-def relocate( obj, place=(0,0,0), rotate=(1,0,0,0), relative=False ):
+def relocate( obj, place=(0,0,0), rotate=(1,0,0,0), relative=True ):
     vec_place = App.Vector( place[0], place[1], place[2] )
     vec_rot   = App.Rotation( App.Vector(rotate[0],rotate[1],rotate[2]), rotate[3] ) 
     
@@ -154,7 +154,11 @@ def creta_mesh_from( source, name = "Mesh" ):
    mesh.Label=source.Label + " (Meshed)"
    del __shape
    show( source, False )
-   
+
+def finish():
+   App.ActiveDocument.recompute()
+   Gui.SendMsgToActiveView("ViewFit")
+
 def init( name =" Unnamed" ):
     try:
         App.closeDocument("Unnamed")

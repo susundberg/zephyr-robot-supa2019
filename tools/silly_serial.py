@@ -39,6 +39,8 @@ def get_config():
    parser.add_argument("--port", default=None, help="prefix to replace on the source")
    parser.add_argument("action")
    parser.add_argument("--output", default="./data/pid_p{kp:03d}_i{ki:03d}_d{kd:03d}.json.gz")
+   parser.add_argument("--kp", nargs="+", type=int )
+   parser.add_argument("--sleep", type=int, default=10)
    
    return parser.parse_args()
 
@@ -53,14 +55,22 @@ class ShellSerial:
       self.buffer = b""
       
     def _read( self ):
-        #log.info("Reading data..")
-        self.buffer += self.fid.read( 512 )
+        #log.debug("Reading data..")
+        #log.debug("Buffer: %s", self.buffer)
         
+        raw = self.fid.read( 512 )
+        self.buffer += raw
+        #log.debug("Received RAW '%s'", raw )
         # Then split
         lines = self.buffer.split(b"\n")
+        
         if len(lines[-1]) != 0:
             self.buffer = lines[-1]
             lines = lines[0:-1]
+            #log.debug("New buffer: %s", self.buffer)
+            #log.debug("New lines: %s", lines)
+        else:
+            self.buffer = b""
             
         if len(lines) == 0:
             return None
@@ -68,8 +78,10 @@ class ShellSerial:
         lines = [ x.strip() for x in lines ]
         lines = [ ( time.time(), x.decode("utf-8")) for x in lines if len(x) > 0 ]
         
-        self.lines += lines
+        
         log.debug("Received '%s'", lines )
+        self.lines += lines
+        
         return True
     
     
@@ -149,6 +161,7 @@ def parse_pid_output( output ):
         if mat:
            val = [ts,] + [ float( mat.group(x) ) for x in range(1,7) ]
            values.append(val)
+           log.info("Parse line %s -> %s", ln, val )
     
     if len(values) == 0:
         raise Exception("Values is empty!")
@@ -173,7 +186,7 @@ def main( config ):
         ki = 0
         kd = 0
         
-        for kp in [20,40,60,80,100]:
+        for kp in config.kp:
             shell.reset()
             shell.command("motor pid %d %d %d" % (kp*100, kd*100, ki*100) )
             output = shell.command("motor drive 300 300 40")
@@ -184,6 +197,8 @@ def main( config ):
             output_fn_format = { "kp":kp, "ki":ki, "kd" : kd }
             output_fn = config.output.format( **output_fn_format )
             save_file( output_fn, output )
+            log.info("Sleeping for %d s", config.sleep )
+            time.sleep( config.sleep)
             
         
 #    print("All done, output: %s", output )

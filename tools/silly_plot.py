@@ -31,6 +31,7 @@ def main( config ):
         pylab.plot( data[:,0], data[:,2], label="Target" )
         pylab.plot( data[:,0], data[:,3], label="Measured" )
         pylab.legend()
+
         
         pylab.subplot(3,1,3)
         pylab.plot( data[:,0], data[:,4], label="Error" )

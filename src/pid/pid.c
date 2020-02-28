@@ -32,8 +32,9 @@ float pid_control_step( PidController* pid, float target, float measured , bool 
    float output = error * pid->coeff_p + pid->error_int * pid->coeff_i + error_d * pid->coeff_d; 
    
    if (debug_print)
-      printf("PID %0.1f   %0.1f %0.1f    %0.1f %0.1f %0.1f\n", (double)output, (double)target, (double)measured, (double)error, (double)error_d, (double)pid->error_int);
-
+   {
+      printf("PID  %0.4f   %0.4f %0.4f    %0.4f %0.4f %0.4f\n",  (double)output, (double)target, (double)measured, (double)error, (double)error_d, (double)pid->error_int);
+   }
    return output;
 }
 

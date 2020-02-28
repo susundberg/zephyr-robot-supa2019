@@ -131,7 +131,7 @@ def create_intersection( shapes, name = None ):
     return comm
 
  
-def relocate( obj, place, rotate=(1,0,0,0), relative=False ):
+def relocate( obj, place=(0,0,0), rotate=(1,0,0,0), relative=False ):
     vec_place = App.Vector( place[0], place[1], place[2] )
     vec_rot   = App.Rotation( App.Vector(rotate[0],rotate[1],rotate[2]), rotate[3] ) 
     

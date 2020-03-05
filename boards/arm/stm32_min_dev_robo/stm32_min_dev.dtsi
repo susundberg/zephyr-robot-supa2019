@@ -48,7 +48,7 @@
 };
 
 &i2c1 {
-	status = "disabled";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 

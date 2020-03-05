@@ -31,7 +31,7 @@ HOLE_RAD       = 3.0/2.0 + TOLE
 BATTERY_HOLEX_BACK = 35 
 BATTERY_HOLEX_FRONT = 55 
 
-
+POS_COVER_HOLE_UP = COVER_HEIGH -  BASE_THICK*2
 ASSUMED_BASELAYER_THICK = 3.0
 
 def create_cover_supports( cover_xsize ):
@@ -140,16 +140,31 @@ def create_front_holes():
         b = supalib.create_box( (axel_size, BASE_THICK*4, 35 + SUPPORT_OFFSET ), place=( -COVER_FRONT_XSIZE - axel_size/2.0 + axel_offset, yloop * COVER_YSIZE - 2*BASE_THICK, 0.0 ) )
         holes.append(b)
     
+    
+    UI_OFFSET=-20
+    UI_OFFSET_EXTRA=-10
+    POS_BUTTON = +20
+    POS_LED    = +35
+    HOLE_BUT_RAD = 3.0 + 1.25*TOLE
+    HOLE_LED_RAD = 2.5 + 1.25*TOLE
+    
+    for xloop in [0,1]:
+        xpos = UI_OFFSET + xloop*UI_OFFSET_EXTRA
+        
+        s1 = supalib.create_cyl( place=( xpos, +POS_BUTTON, POS_COVER_HOLE_UP ), rotate=(1,0,0,0), radius = HOLE_BUT_RAD, size_z=COVER_YSIZE*2.0)
+        s2 = supalib.create_cyl( place=( xpos, +POS_LED, POS_COVER_HOLE_UP ), rotate=(1,0,0,0), radius = HOLE_LED_RAD, size_z=COVER_YSIZE*2.0)
+        holes += [s1, s2]
+            
     bat_xsize = BATTERY_HOLEX_FRONT
     bay_ysize = 120
-    bat_hole = supalib.create_box( ( bat_xsize*2, bay_ysize, BASE_THICK*4), place=(-bat_xsize, COVER_YSIZE/2 - bay_ysize/2, COVER_HEIGH -  BASE_THICK*2 ) )   
+    bat_hole = supalib.create_box( ( bat_xsize*2, bay_ysize, BASE_THICK*4), place=(-bat_xsize, COVER_YSIZE/2 - bay_ysize/2, POS_COVER_HOLE_UP ) )   
     holes.append( bat_hole )
     return supalib.create_union( holes )
 
 def create_back_holes():
     bat_xsize = BATTERY_HOLEX_BACK
     bay_ysize = 120
-    bat_hole = supalib.create_box( ( bat_xsize*2, bay_ysize, BASE_THICK*4), place=(-bat_xsize, COVER_YSIZE/2 - bay_ysize/2, COVER_HEIGH -  BASE_THICK*2 ) )   
+    bat_hole = supalib.create_box( ( bat_xsize*2, bay_ysize, BASE_THICK*4), place=(-bat_xsize, COVER_YSIZE/2 - bay_ysize/2, POS_COVER_HOLE_UP ) )   
     return bat_hole
     
 front = create_front( COVER_FRONT_XSIZE )
@@ -159,10 +174,6 @@ front = supalib.create_cut( front, front_holes, name="Front cover")
 back  = create_front( COVER_BACK_XSIZE, create_adds = False, short_triangs = True )
 back_holes = create_back_holes()
 back = supalib.create_cut( back, back_holes, name="Back cover")
-
-
-
-# TODO: battery hole + batter cover support
 
 
 def create_split_support( cover_xsize, cover_hole_offset ):
@@ -198,7 +209,4 @@ Gui.SendMsgToActiveView("ViewFit")
 
 
 for item in parts:
-    
-
-
-#supalib.creta_mesh_from( back )
+    supalib.creta_mesh_from( item )

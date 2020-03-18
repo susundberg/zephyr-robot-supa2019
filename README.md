@@ -33,20 +33,22 @@ Motor related
 | --------------- | ----------------  | ----- |
 | UART1-TX        |  PA9              | (gre) |
 | UART1-RX        |  PA10             | (yel) |
-| IR-Sensor       |  PA2 - ISR2       | (blu) |
-| Emergency stop  |  PA1 - ISR1       |       |  
 | Imu I2C         | PB7 - I2C1_SDA    |       |
 | Imu I2C         | PB6 - I2C1_SCL    |       |
 | Imu isr         | PB5 - ISR5        |       |
-
+| UI SW1          |  PA2 - ISR2       | (TODO - WAS IR) |
+| UI SW0          |  PA1 - ISR1       | (TODO - NOT CON)      |  
+| UI LD0          |  PB12             | SYSTEM LED            | 
+| UI LD1          |  PC13             | UILED0 - TODO (max sink 3ma!) |
 
 **Big motor**
 
 
-| Function        |    Pin              |   Info   | Notes       | 
-| --------------- | ------------------- | -------- | ----------- |
-| Big Enable      | PB8 - TIM4_CH3 PWM  | (ora)    | Change TODO |
-| Big current meas| PA3 - ADC1-3        |          | TODO        |
+| Function         |    Pin              |   Info   | Notes       | 
+| ---------------  | ------------------- | -------- | ----------- |
+| Big Enable       | PB8 - TIM4_CH3 PWM  | (ora)    | TODO CHANGE |
+| Big current meas | PA3 - ADC1-3        |          | TODO NOT CONN |
+| Battery volt meas| PA4 - ADC1-4        | TODO NOT CONN            |
 
 
 

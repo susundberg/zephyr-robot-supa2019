@@ -38,8 +38,8 @@ Motor related
 | Imu isr         | PB5 - ISR5        |       |
 | UI SW1          |  PA2 - ISR2       | (TODO - WAS IR) |
 | UI SW0          |  PA1 - ISR1       | (TODO - NOT CON)      |  
-| UI LD0          |  PB12             | SYSTEM LED            | 
-| UI LD1          |  PC13             | UILED0 - TODO (max sink 3ma!) |
+| UI LD0          |  PB12             | System led + UI led 0 | 
+| UI LD1          |  PC13             | UI led 1- TODO (max sink 3ma!) |
 
 **Big motor**
 

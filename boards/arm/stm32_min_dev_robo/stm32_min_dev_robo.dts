@@ -55,7 +55,7 @@
 			label = "motor 2b";
 	   };
 	   motor_fun: motor_fun {
-			gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+			gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;
 			label = "motor function";
 	   };
 	};
@@ -75,6 +75,20 @@
 	
 	
 
+};
+
+&usart1 {
+	parity = <2>;
+};
+
+&i2c1 {
+        mpu6050@68 {
+                compatible = "invensense,mpu6050";
+                reg = <0x68>;
+                status = "okay";
+                label = "MPU6050";
+                int-gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>;
+        };
 };
 
 

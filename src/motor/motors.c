@@ -36,7 +36,7 @@ static Motor_cmd_done_callback LOCAL_motor_callback = NULL;
 
 #define MOTOR_CONTROL_LOOP_MS 10
 static const float MOTOR_CONTROL_LOOP_DT_S = MOTOR_CONTROL_LOOP_MS / 1000.0f;
-#define MOTOR_PWM_SANITY_CHECK_LIMIT 10000
+#define MOTOR_PWM_SANITY_CHECK_LIMIT 60000
 
 static PidController LOCAL_pid[2];
 
@@ -267,7 +267,7 @@ static void motor_cmd_drive( float* distances, float max_speed)
         {
             float position_target_cm   = motor_ramp_location( &LOCAL_target[loop], time_sec );
             
-            float pwm_out_flt = pid_control_step( &LOCAL_pid[loop], position_target_cm, position_cm[loop], loop==1 );
+            float pwm_out_flt = pid_control_step( &LOCAL_pid[loop], position_target_cm, position_cm[loop], false );
             
             int pwm_out = ROUND_INT( pwm_out_flt*100 );
             

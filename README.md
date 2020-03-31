@@ -1,6 +1,7 @@
 # zephyr-robot-supa2019
 Zephyr based robot
 
+For pictures and some details see [Hackaday.io](https://hackaday.io/project/170682-lawm-mowing-robot-with-stm32-blue-pill-and-zephyr)
 
 ## Pinout
 

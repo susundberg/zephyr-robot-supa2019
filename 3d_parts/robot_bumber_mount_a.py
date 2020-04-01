@@ -1,4 +1,4 @@
-
+import supalib
 
 EPS = 0.01
 TOLE = 0.2
@@ -111,8 +111,7 @@ stick = create_stick()
 for x in [ bumber, mount_a, mount_b, stick ]:
    supalib.creta_mesh_from( x )
 
-App.ActiveDocument.recompute()
-Gui.SendMsgToActiveView("ViewFit")
+supalib.finish()
 
 
 

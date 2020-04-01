@@ -1,4 +1,4 @@
-
+import supalib
 
 EPS = 0.01
 TOLE = 0.2
@@ -106,7 +106,7 @@ def create_front( cover_xsize, create_adds = True, short_triangs = False ):
    
    HOLE_OFF_X  = -cover_xsize + SUPPORT_XSIZE*0.5
    HOLE_OFF_XL = cover_xsize - 2*SUPPORT_XSIZE*0.5 
-   HOLE_OFF_Y  = -BASE_THICK*2
+   # HOLE_OFF_Y  = -BASE_THICK*2
    HOLE_OFF_Z  = SUPPORT_OFFSET - ASSUMED_BASELAYER_THICK - HOLE_RAD/2.0
    
    for xloop in [0,1]:
@@ -195,9 +195,9 @@ parts += split_left_right( back, COVER_BACK_XSIZE, BATTERY_HOLEX_BACK )
 supalib.relocate( parts[2] , place=(10, +COVER_YSIZE, 0), rotate=(0,0,1,180) )
 supalib.relocate( parts[3] , place=(10, +COVER_YSIZE, 0), rotate=(0,0,1,180) )
 
-App.ActiveDocument.recompute()
-Gui.SendMsgToActiveView("ViewFit")
 
 
 for item in parts:
     supalib.creta_mesh_from( item )
+
+supalib.finish()

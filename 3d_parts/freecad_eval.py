@@ -7,7 +7,7 @@ import sys
 FREECAD_PORT = 5000
 FREECAD_IP = "127.0.0.1"
 
-def reload_supalib( path ):
+def init_supalib( path ):
     reloads =  """
 import sys
 sys.path.append( "%s" )
@@ -17,9 +17,10 @@ supalib.init()
 """ % (path)
     return reloads.encode("Utf-8")
 
+def finish_supalib():
+    return "supalib.finish()".encode("utf-8")
 
-
-def client( message,  prefix = None ):
+def client( message,  prefix = None, postfix=None  ):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((FREECAD_IP, FREECAD_PORT))
     
@@ -27,6 +28,8 @@ def client( message,  prefix = None ):
         if prefix:
            sock.sendall( prefix )
         sock.sendall( message )
+        if postfix:
+            sock.sendall( postfix )
         response_raw = sock.recv(1024).decode("utf-8")
         response = "\n".join( ["Received: '%s'" % x for x in response_raw.split("\n")] )
         if response_raw == "None":
@@ -45,7 +48,7 @@ def client( message,  prefix = None ):
 
 def main(config):
    with open( config.input_file, 'rb' ) as fid:
-       return client( fid.read(), prefix=reload_supalib( config.path)   )
+       return client( fid.read(), prefix=init_supalib( config.path), postfix=finish_supalib()   )
        
     
     

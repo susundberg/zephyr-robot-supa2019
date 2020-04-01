@@ -1,21 +1,24 @@
 
+import supalib
 
 EPS = 0.01
 TOLE = 0.3
 
 
 BASE_THICK=4
-PAD_SIZE=40
-PAD_HEIG = 12 
+PAD_SIZE=60
+PAD_HEIG      = 30
+SUPPORT_INTER = PAD_HEIG - 8 
+
 FULL_LEN = 58
 SUPPORT_LEN = FULL_LEN - PAD_HEIG - BASE_THICK
 SUPPORT_SIZE = BASE_THICK*3
-SUPPORT_INTER = 4
+
 MOUNT_SIZE=40
 
 def create_pad():
     
-    PAD_LARGE_RADIUS=PAD_SIZE*0.75
+    PAD_LARGE_RADIUS=PAD_SIZE*0.5
     INTER  = SUPPORT_INTER
     
     box = supalib.create_cyl( size_z=PAD_HEIG, radius=PAD_SIZE/2, place=(0,0,0) )
@@ -52,7 +55,6 @@ sup = creat_support()
 
 
 for x in [pad, sup ]:
-   supalib.creta_mesh_from( x )
-   
-App.ActiveDocument.recompute()
-Gui.SendMsgToActiveView("ViewFit")
+   mm = supalib.creta_mesh_from( x, save_to="/tmp/robot_" )
+    
+

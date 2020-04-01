@@ -1,4 +1,5 @@
 
+import supalib
 
 EPS = 0.01
 TOLE = 0.1
@@ -47,12 +48,8 @@ for xloop in [-1,+1]:
 bolts = supalib.create_union( bolts )
 main_plate_side_xy = supalib.create_cut( main_plate_side_xy, bolts) 
 
-App.ActiveDocument.recompute()
-part = supalib.create_union( [ main_plate_side_xy, main_plate_side_xz, main_plate_side_yz ] )
-mesh = supalib.creta_mesh_from( part )
 
-App.ActiveDocument.recompute()
-Gui.SendMsgToActiveView("ViewFit")
+part = supalib.create_union( [ main_plate_side_xy, main_plate_side_xz, main_plate_side_yz ] )
 
 
 

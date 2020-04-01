@@ -1,8 +1,6 @@
-import os
-import importlib
-import sys
 
 
+import supalib
 
 EPS = 0.01
 TOLE = 0.2
@@ -45,8 +43,8 @@ for loop in [1.0, -1.0]:
 
 part  = supalib.create_cut( part, supalib.create_union( holes ) )
 part = supalib.create_fillet( part, radius=1.0, edges = ( part.Shape.Edges[25], ) )
-App.ActiveDocument.recompute()
-Gui.SendMsgToActiveView("ViewFit")
+
 
 supalib.creta_mesh_from( part )
 
+supalib.finish()

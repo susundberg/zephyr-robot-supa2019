@@ -4,6 +4,7 @@ import FreeCAD as App
 import FreeCADGui as Gui
 
 import math
+from pathlib import Path
 
 EPS = 0.01
 
@@ -70,7 +71,7 @@ def create_bolt( radius_small, radius_large, size_z_small, size_z_large, place=(
     return cyls
 
 
-def create_sphere( place, radius, rotate=(1,0,0,0), name=None ):
+def create_sphere( radius, place=(0,0,0), rotate=(1,0,0,0), name=None ):
     name = make_name( name, "Sphere" )
     sp = App.ActiveDocument.addObject("Part::Sphere", name )
     sp.Radius = '%f mm' % radius
@@ -79,7 +80,7 @@ def create_sphere( place, radius, rotate=(1,0,0,0), name=None ):
     sp.Placement = App.Placement( vec_place, vec_rot )
     return sp
 
-def create_cyl( place, radius, size_z, rotate=(1,0,0,0), name=None ):
+def create_cyl( radius, size_z, place=(0,0,0), rotate=(1,0,0,0), name=None ):
     name = make_name( name, "Cyl" )
     cyl = App.ActiveDocument.addObject("Part::Cylinder", name )
     cyl.Height = '%f mm' % size_z
@@ -146,7 +147,7 @@ def relocate( obj, place=(0,0,0), rotate=(1,0,0,0), relative=True ):
     obj.Placement = new_place
     return obj
 
-def creta_mesh_from( source, name = "Mesh" ):
+def creta_mesh_from( source, name = "Mesh", save_to = None, save_format = "stl", save_version = "v0" ):
    mesh = App.activeDocument().addObject("Mesh::Feature", name)
    __shape = source.Shape.copy(False)
    __shape.Placement = source.getGlobalPlacement()
@@ -154,6 +155,10 @@ def creta_mesh_from( source, name = "Mesh" ):
    mesh.Label=source.Label + " (Meshed)"
    del __shape
    show( source, False )
+   
+   if save_to:
+       mesh.Mesh.write( ( save_to + source.Label + "_" + save_version ).lower() + "." + save_format )
+   return mesh 
 
 def finish():
    App.ActiveDocument.recompute()

@@ -1,5 +1,6 @@
 
 
+import supalib
 
 EPS = 0.01
 TOLE = 0.2
@@ -83,7 +84,7 @@ wings = create_bottom_wings()
 
 
 part = supalib.create_union( (main_bottom, wings) )
-App.ActiveDocument.recompute()
+
 
 part = supalib.create_chamfer( part, radius=1.0, edges=[ part.Shape.Edges[x] for x in [ 13, 1,  25 ] ] )
 part.Label = "Motor mount"
@@ -100,8 +101,7 @@ supalib.creta_mesh_from( part )
 supalib.creta_mesh_from( pads1 )
 supalib.creta_mesh_from( pads2 )
 
-App.ActiveDocument.recompute()
-Gui.SendMsgToActiveView("ViewFit")
+supalib.finish()
 
 
 

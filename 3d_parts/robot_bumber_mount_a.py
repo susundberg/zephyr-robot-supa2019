@@ -1,8 +1,4 @@
-import supalib
-import importlib
 
-importlib.reload( supalib )
-supalib.init()
 
 EPS = 0.01
 TOLE = 0.2

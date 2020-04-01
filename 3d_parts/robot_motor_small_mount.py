@@ -1,8 +1,5 @@
-import supalib
-import importlib
 
-importlib.reload( supalib )
-supalib.init()
+
 EPS = 0.01
 TOLE = 0.1
 BASE_PLATE_INNER_XSIZE = 33 + 2*8

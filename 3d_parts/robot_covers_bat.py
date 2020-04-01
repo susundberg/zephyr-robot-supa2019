@@ -1,13 +1,5 @@
-import os
-import importlib
-import sys
 
-sys.path.append( os.path.dirname(os.path.realpath(__file__)) )
 
-import supalib
-
-importlib.reload( supalib )
-supalib.init()
 
 EPS = 0.01
 TOLE = 0.2
@@ -45,5 +37,3 @@ bat = supalib.relocate( bat, place=(BOX_SIZE_X - 10, BOX_SIZE_Y/2.0, - BAT_SIZE_
 box = supalib.create_cut( box, bat, name="Bat_box")
 supalib.creta_mesh_from( box )
 supalib.finish()
-
-                            

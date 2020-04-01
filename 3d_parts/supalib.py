@@ -159,7 +159,7 @@ def finish():
    App.ActiveDocument.recompute()
    Gui.SendMsgToActiveView("ViewFit")
 
-def init( name =" Unnamed" ):
+def init( name ="Unnamed" ):
     try:
         App.closeDocument("Unnamed")
     except NameError:

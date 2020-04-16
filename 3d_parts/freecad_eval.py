@@ -10,6 +10,7 @@ FREECAD_IP = "127.0.0.1"
 def init_supalib( path ):
     reloads =  """
 import sys
+import importlib
 sys.path.append( "%s" )
 import supalib
 importlib.reload( supalib )

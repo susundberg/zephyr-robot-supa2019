@@ -147,7 +147,8 @@ def relocate( obj, place=(0,0,0), rotate=(1,0,0,0), relative=True ):
     obj.Placement = new_place
     return obj
 
-def creta_mesh_from( source, name = "Mesh", save_to = None, save_format = "stl", save_version = "v0" ):
+def creta_mesh_from( source, name = None, save_to = None, save_format = "stl", version = 0 ):
+   name = make_name( name, "mesh" )
    mesh = App.activeDocument().addObject("Mesh::Feature", name)
    __shape = source.Shape.copy(False)
    __shape.Placement = source.getGlobalPlacement()
@@ -156,8 +157,11 @@ def creta_mesh_from( source, name = "Mesh", save_to = None, save_format = "stl",
    del __shape
    show( source, False )
    
+   save_version = "v%d" % version 
    if save_to:
-       mesh.Mesh.write( ( save_to + source.Label + "_" + save_version ).lower() + "." + save_format )
+       fn = ( save_to + source.Label + "_" + save_version ).lower() + "." + save_format
+       mesh.Mesh.write( fn )
+       print("Saved to: %s" % fn )
    return mesh 
 
 def finish():

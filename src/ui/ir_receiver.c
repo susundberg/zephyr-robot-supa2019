@@ -11,15 +11,18 @@ LOG_MODULE_REGISTER(ir);
 
 
 
-#define LOCAL_isr_queue_n 64
-static char __aligned(4) LOCAL_ir_queue_buffer[ LOCAL_isr_queue_n ];
-static struct k_msgq LOCAL_ir_queue;
+
 static struct gpio_callback LOCAL_ir_callback;
 
-#define LOCAL_ir_registery_size 8
-static IR_keycode LOCAL_ir_registry_key[ LOCAL_ir_registery_size ];
-static IRCmd_callback LOCAL_ir_registry_fun[ LOCAL_ir_registery_size ];
+
+
+static IR_keycode LOCAL_ir_registry_key[ MAX_IR_REGISTRY_SIZE ];
+static IRCmd_callback LOCAL_ir_registry_fun[ MAX_IR_REGISTRY_SIZE ];
 static int LOCAL_ir_registry_n = 0;
+
+static struct device*  LOCAL_pin_dev;
+static struct k_msgq* LOCAL_ir_queue = NULL;
+
 
 
 static void ir_signal_isr(struct device* gpiob, struct gpio_callback* cb, u32_t pins)
@@ -47,66 +50,38 @@ static void ir_signal_isr(struct device* gpiob, struct gpio_callback* cb, u32_t 
     u8_t value = 0;
     if ( dtime > threshold_for_binary )  
     {
-        value = 1;
+        value = UI_QUEUE_IR_1;
     }
     else
     {
-        value = 0;
+        value = UI_QUEUE_IR_1;
     }
 
-    k_msgq_put( &LOCAL_ir_queue, &value, K_NO_WAIT );
+    k_msgq_put( LOCAL_ir_queue, &value, K_NO_WAIT );
     
 }
 
 
 
 
-
-
-static struct device*  LOCAL_pin_dev[2];
-static const char*     LOCAL_pin_names[] = { DT_GPIO_KEYS_IR_INPUT_GPIOS_CONTROLLER, DT_GPIO_LEDS_IR_OUTPUT_GPIOS_CONTROLLER };
-
-
-
-static void ir_pins_init()
+void ir_pins_init( struct k_msgq* msg_queue )
 {
-    for (int loop = 0; loop < 2; loop ++ )
-    {
-       LOCAL_pin_dev[loop] = device_get_binding( LOCAL_pin_names[loop] );
-       
-       if ( LOCAL_pin_dev[loop] == NULL )
-       {
-           FATAL_ERROR("Cannot find device: %s", LOCAL_pin_names[loop] );
-           return;
-       }
-    }
+    LOCAL_ir_queue = msg_queue;
     
-    
-    int loop = 0;
-    RET_CHECK( gpio_pin_configure( LOCAL_pin_dev[loop], DT_GPIO_KEYS_IR_INPUT_GPIOS_PIN, GPIO_INPUT | DT_GPIO_KEYS_IR_INPUT_GPIOS_FLAGS  ) );
-    
+    DEV_GET_CHECK( LOCAL_pin_dev, DT_GPIO_KEYS_IR_INPUT_GPIOS_CONTROLLER );
+    RET_CHECK( gpio_pin_configure( LOCAL_pin_dev, DT_GPIO_KEYS_IR_INPUT_GPIOS_PIN, GPIO_INPUT | DT_GPIO_KEYS_IR_INPUT_GPIOS_FLAGS  ) );
+
     gpio_init_callback( &LOCAL_ir_callback, ir_signal_isr, BIT( DT_GPIO_KEYS_IR_INPUT_GPIOS_PIN ) );
 
-    RET_CHECK( gpio_add_callback( LOCAL_pin_dev[loop], &LOCAL_ir_callback) );
-    RET_CHECK( gpio_pin_interrupt_configure( LOCAL_pin_dev[loop], DT_GPIO_KEYS_IR_INPUT_GPIOS_PIN, GPIO_INT_EDGE_TO_ACTIVE) );
+    RET_CHECK( gpio_add_callback( LOCAL_pin_dev, &LOCAL_ir_callback) );
+    RET_CHECK( gpio_pin_interrupt_configure( LOCAL_pin_dev, DT_GPIO_KEYS_IR_INPUT_GPIOS_PIN, GPIO_INT_EDGE_TO_ACTIVE) );
 
-    
-       
-    loop = 1;
-    RET_CHECK ( gpio_pin_configure( LOCAL_pin_dev[loop], DT_GPIO_LEDS_IR_OUTPUT_GPIOS_PIN, GPIO_OUTPUT | DT_GPIO_LEDS_IR_OUTPUT_GPIOS_FLAGS ) );
-    RET_CHECK ( gpio_pin_set( LOCAL_pin_dev[loop], DT_GPIO_LEDS_IR_OUTPUT_GPIOS_PIN, 0 )  );    
-    
-    
-    
-   
 }
 
 
 void ir_receiver_register( IR_keycode code, IRCmd_callback callback )
 {
-    
-    ASSERT( LOCAL_ir_registry_n < LOCAL_ir_registery_size );
-    
+    ASSERT( LOCAL_ir_registry_n < MAX_IR_REGISTRY_SIZE );
     LOCAL_ir_registry_fun[ LOCAL_ir_registry_n ] = callback;
     LOCAL_ir_registry_key[ LOCAL_ir_registry_n ] = code;
     LOCAL_ir_registry_n += 1 ;
@@ -144,10 +119,7 @@ static void handle_received_code( u8_t* buffer, u32_t buffer_n )
     }
     buffer_n = byte_loop + 1;
     
-    
-    memset( buffer + buffer_n, 0x00, LOCAL_isr_queue_n - buffer_n );
-    
-    
+    memset( buffer + buffer_n, 0x00, MAX_IR_CODE_SIZE - buffer_n );
     static uint16_t last_keycode = 0x00;
     
     if ( buffer_n == 5 )
@@ -162,7 +134,6 @@ static void handle_received_code( u8_t* buffer, u32_t buffer_n )
             handle_received_keycode( last_keycode, false );
             return;
        }
-
     }    
     else if ( buffer_n == 1 )
     {
@@ -176,54 +147,37 @@ static void handle_received_code( u8_t* buffer, u32_t buffer_n )
     
     LOG_WRN("Unknown keycode of size %d", buffer_n );
     LOG_HEXDUMP_WRN( buffer, buffer_n, "Code:");
-
 }
 
 
-static void ir_receiver_main()
+          
+void ir_receiver_code( uint8_t code_new )
 {
-   
-   k_msgq_init( &LOCAL_ir_queue, LOCAL_ir_queue_buffer, 1, LOCAL_isr_queue_n );
-
-   ir_pins_init();
+   static u8_t code_buffer[ MAX_IR_CODE_SIZE ];
+   static uint32_t code_n = 0;
+   static const uint32_t MIN_CODE_SIZE = 3;
     
-   LOG_INF("IR thread started!");
-
-   uint32_t loop = 0;
-   u8_t code_buffer[ LOCAL_isr_queue_n ];
-   uint32_t code_n = 0;
-   static const int MIN_CODE_SIZE = 3;
-   while(1)
+   if (code_new != 0x00 )
    {
-      u8_t code_new;
-      if ( k_msgq_get(&LOCAL_ir_queue, &code_new, 100 ) == 0  )
-      {
-          code_buffer[ code_n ] = code_new;
-          code_n += 1 ;
-          if ( code_n >= LOCAL_isr_queue_n )
-          {
-              handle_received_code( code_buffer, code_n );
-              code_n = 0;
-          }
-      }
-      else
-      {
-          if ( code_n < MIN_CODE_SIZE )
-              continue;
-          
-          handle_received_code( code_buffer, code_n );
-          code_n = 0;
-      }
-          
-      gpio_pin_set( LOCAL_pin_dev[1], DT_GPIO_LEDS_IR_OUTPUT_GPIOS_PIN, loop % 2);
-      loop += 1;
-      
+        code_buffer[ code_n ] = ( code_new == UI_QUEUE_IR_1 );
+        code_n += 1 ;
+        
+        if ( code_n >= MAX_IR_CODE_SIZE )
+        {
+           handle_received_code( code_buffer, code_n );
+           code_n = 0;
+        }
    }
+   else
+   {
+        if ( code_n < MIN_CODE_SIZE )
+        {
+            code_n = 0;
+            return; 
+        }
+
+        handle_received_code( code_buffer, code_n );
+        code_n = 0;
+   }
+   
 }
-
-
-
-K_THREAD_DEFINE( ir_thread, OS_DEFAULT_STACKSIZE*2, ir_receiver_main, NULL, NULL, NULL,
-                 OS_DEFAULT_PRIORITY, 0, K_NO_WAIT);
-
-

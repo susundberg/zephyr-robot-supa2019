@@ -18,6 +18,12 @@ typedef enum
 } IR_keycode;
 
 typedef void (*IRCmd_callback)( IR_keycode code, bool repeated );
-
 void ir_receiver_register( IR_keycode code, IRCmd_callback callback );
 
+#define UI_QUEUE_IR_MASK     0x03
+#define UI_QUEUE_IR_1        0x01
+#define UI_QUEUE_IR_0        0x02
+#define UI_QUEUE_BUTTON_0    0x04
+#define UI_QUEUE_BUTTON_1    0x08
+#define UI_QUEUE_BUTTON_ACT  0x10
+#define UI_QUEUE_BUTTON_MASK 0x1C

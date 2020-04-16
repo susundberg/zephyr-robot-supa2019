@@ -34,7 +34,7 @@
 #define SUPA_MODULE "mai"
 #include "main.h"
 #include "motor/motors.h"
-#include "ir_receiver/ir_receiver.h"
+#include "ui/ui.h"
 #include "logic/logic.h"
 
 #include "utils/utils.h"
@@ -70,13 +70,14 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
     CODE_UNREACHABLE;
 }
 
+#define BLINK_LED_NAME DT_GPIO_LEDS_LED_RED_LABEL
 void main(void)
 {
     u32_t cnt = 0;
     struct device* dev;
 
-    dev = device_get_binding( DT_ALIAS_LED0_GPIOS_CONTROLLER );
-    RET_CHECK( gpio_pin_configure( dev, DT_ALIAS_LED0_GPIOS_PIN, GPIO_OUTPUT | DT_ALIAS_LED0_GPIOS_FLAGS ) );
+    dev = device_get_binding( DT_GPIO_LEDS_LED_RED_GPIOS_CONTROLLER );
+    RET_CHECK( gpio_pin_configure( dev, DT_GPIO_LEDS_LED_RED_GPIOS_PIN, GPIO_OUTPUT | DT_GPIO_LEDS_LED_RED_GPIOS_FLAGS ) );
     
     
     ir_receiver_register( KEY_VOL_UP, ircmd_move );
@@ -90,7 +91,7 @@ void main(void)
     LOG_INF("Robot control task started!");
     while (1) 
     {
-      gpio_pin_set(dev, DT_ALIAS_LED0_GPIOS_PIN, cnt % 2);
+      gpio_pin_set(dev, DT_GPIO_LEDS_LED_RED_GPIOS_PIN, cnt % 2);
       cnt++;
       k_sleep( 250 );
     }

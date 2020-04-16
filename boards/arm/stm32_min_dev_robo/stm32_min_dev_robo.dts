@@ -12,26 +12,38 @@
 	compatible = "st,stm32_min_dev_blue", "st,stm32f103c8";
 
 	leds {
-		led: led {
+	    compatible = "gpio-leds";
+		led_red: led_red {
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			label = "led_red";
 		};
+		led_green: led_green {
+			gpios = <&gpioc 14 GPIO_ACTIVE_HIGH>;
+			label = "led_green";
+		};		
 	};
+	
+	
+	
+	buttons {
+		compatible = "gpio-keys";
+		button_sw0: button_sw0 {
+			label = "button sw0";
+			gpios = <&gpioa 1 GPIO_INT_ACTIVE_HIGH >;
+		};
+		button_sw1: button_sw1 {
+			label = "button sw1";
+			gpios = <&gpioa 2 GPIO_INT_ACTIVE_HIGH >;
+		};
+    };
+    
 
-	ir_receiver_output 
-	{
-	   compatible = "gpio-leds";
-	   ir_output: ir_output {
-			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
-			label = "ir output"; // Also led blue
-	   };
-
-	};
 	ir_receiver_input
 	{
 		compatible = "gpio-keys";
 		ir_input: ir_input {
 			label = "ir input";
-			gpios = <&gpioa 2 GPIO_INT_ACTIVE_HIGH >;
+			gpios = <&gpiob 3 GPIO_INT_ACTIVE_HIGH >;
 		};
 	};
 	

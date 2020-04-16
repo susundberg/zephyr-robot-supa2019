@@ -38,8 +38,9 @@ Motor related
 | Imu I2C         | PB7 - I2C1_SDA    |         |
 | Imu I2C         | PB6 - I2C1_SCL    |         |
 | Imu isr         | PB5 - ISR5        |         |
-| UI SW1          |  PA2 - ISR2       | (TODO - WAS IR)                |
-| UI SW0          |  PA1 - ISR1       | (TODO - NOT CON)               |  
+| UI IR RCV       |  PB3 - ISR3       |         |  
+| UI SW1          |  PA2 - ISR2       |                |
+| UI SW0          |  PA1 - ISR1       |                |  
 | UI LD0          |  PC13             | System led + UI led 0          | 
 | UI LD1          |  PC14             | UI led 1- TODO (max sink 3ma!) |
 

@@ -6,19 +6,22 @@
 
 typedef enum 
 {
-    KEY_VOL_UP   = 0xa05c,
-    KEY_VOL_DOWN = 0xa458,
-    KEY_LEFT = 0xe418,
-    KEY_RIGHT = 0xe01c,
-    KEY_FUNCTION = 0xd628,
-    KEY_AUTO_ON  = 0xe31c,
-    KEY_POWER    = 0x8478,
-    KEY_PLAY     = 0xc13c,
+    IRKEY_VOL_UP   = 0xa05c,
+    IRKEY_VOL_DOWN = 0xa458,
+    IRKEY_LEFT     = 0xe418,
+    IRKEY_RIGHT    = 0xe01c,
+    IRKEY_FUNCTION = 0xd628,
+    IRKEY_AUTO_ON  = 0xe31c,
+    IRKEY_POWER    = 0x8478,
+    IRKEY_PLAY     = 0xc13c,
     
-} IR_keycode;
+    UI_SW_0        = 0x0010,
+    UI_SW_1        = 0x0011,
+    
+} UI_keycode;
 
-typedef void (*IRCmd_callback)( IR_keycode code, bool repeated );
-void ir_receiver_register( IR_keycode code, IRCmd_callback callback );
+typedef void (*UICmd_callback)( UI_keycode code, bool repeated );
+void ui_receiver_register( UI_keycode code, UICmd_callback callback );
 
 #define UI_QUEUE_IR_MASK     0x03
 #define UI_QUEUE_IR_1        0x01

@@ -19,6 +19,78 @@ static struct gpio_callback LOCAL_button_cb[2];
 static struct device*       LOCAL_button_dev[2];
 
 
+
+static int LOCAL_ui_registry_n = 0;
+static UI_keycode LOCAL_ui_registry_key[ MAX_IR_REGISTRY_SIZE ];
+static UICmd_callback LOCAL_ui_registry_fun[ MAX_IR_REGISTRY_SIZE ];
+
+
+void ui_receiver_register( UI_keycode code, UICmd_callback callback )
+{
+    ASSERT( LOCAL_ui_registry_n < MAX_IR_REGISTRY_SIZE );
+    LOCAL_ui_registry_fun[ LOCAL_ui_registry_n ] = callback;
+    LOCAL_ui_registry_key[ LOCAL_ui_registry_n ] = code;
+    LOCAL_ui_registry_n += 1 ;
+}
+
+static u32_t ui_received_keycode_find( u16_t keycode )
+{
+   for ( int loop = 0; loop < LOCAL_ui_registry_n; loop ++ )
+   {
+       if ( LOCAL_ui_registry_key[ loop] != keycode )
+           continue;
+       return loop;
+   }
+   return LOCAL_ui_registry_n + 1;
+}
+
+void ui_received_keycode( u16_t keycode, bool is_ir, bool extra )
+{
+       static u32_t LOCAL_last_ir_key       = 0x00;
+           
+       if ( keycode == 0x00 )
+       { // means that no IR key is active
+           
+          if ( LOCAL_last_ir_key != 0x00 )
+          {
+              u32_t old_index = ui_received_keycode_find( LOCAL_last_ir_key );
+              ASSERT( LOCAL_last_ir_key < LOCAL_ui_registry_n );
+              
+              LOCAL_ui_registry_fun[ old_index ]( LOCAL_last_ir_key, false );
+              LOCAL_last_ir_key = 0x00;
+              
+          }
+          return;
+       }    
+       
+       // this is continuation button press
+       if ( is_ir && extra == true )
+           return;
+           
+       u32_t index = ui_received_keycode_find( keycode );
+       if ( index >= LOCAL_ui_registry_n )
+       {
+            LOG_INF("Key 0x%04X not registered", keycode );
+            return;
+       }
+       
+       bool pressed = false;
+       if ( is_ir )
+       {
+           LOCAL_last_ir_key = keycode;
+           pressed = true;
+       }
+       else
+       {   // on button we have direct value
+           pressed = extra;
+       }
+       
+       LOCAL_ui_registry_fun[ index ]( keycode, pressed );
+       return;
+   
+}
+
+
 static void ui_button_signal_isr(struct device* dev, struct gpio_callback* cb, u32_t pins)
 {
     
@@ -64,9 +136,25 @@ static void ui_pin_init()
                         DT_GPIO_KEYS_BUTTON_SW1_GPIOS_CONTROLLER, DT_GPIO_KEYS_BUTTON_SW1_GPIOS_PIN, DT_GPIO_KEYS_BUTTON_SW1_GPIOS_FLAGS );
 }   
     
-static void ui_button_receive( uint8_t code )
+static void ui_button_receive( uint8_t code_raw )
 {
-    LOG_INF("UI Button pressed: 0x%02X", code );
+    LOG_INF("UI Button pressed: 0x%02X", code_raw );
+    u16_t code_keycode = 0x00;
+    
+    if ( code_raw & UI_QUEUE_BUTTON_0 )
+    {
+        code_keycode = UI_SW_0;
+    }
+    else if (code_raw & UI_QUEUE_BUTTON_1 )
+    {
+        code_keycode = UI_SW_1;
+    }
+    else
+    {
+        ASSERT(0);
+    }
+    
+    ui_received_keycode( code_keycode, false, code_raw & UI_QUEUE_BUTTON_ACT );
 }
     
 static void ui_main()

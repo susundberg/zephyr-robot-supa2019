@@ -16,9 +16,6 @@ static struct gpio_callback LOCAL_ir_callback;
 
 
 
-static IR_keycode LOCAL_ir_registry_key[ MAX_IR_REGISTRY_SIZE ];
-static IRCmd_callback LOCAL_ir_registry_fun[ MAX_IR_REGISTRY_SIZE ];
-static int LOCAL_ir_registry_n = 0;
 
 static struct device*  LOCAL_pin_dev;
 static struct k_msgq* LOCAL_ir_queue = NULL;
@@ -79,27 +76,7 @@ void ir_pins_init( struct k_msgq* msg_queue )
 }
 
 
-void ir_receiver_register( IR_keycode code, IRCmd_callback callback )
-{
-    ASSERT( LOCAL_ir_registry_n < MAX_IR_REGISTRY_SIZE );
-    LOCAL_ir_registry_fun[ LOCAL_ir_registry_n ] = callback;
-    LOCAL_ir_registry_key[ LOCAL_ir_registry_n ] = code;
-    LOCAL_ir_registry_n += 1 ;
-}
 
-
-static void handle_received_keycode( u16_t keycode, bool repeated )
-{
-   for ( int loop = 0; loop < LOCAL_ir_registry_n; loop ++ )
-   {
-       if ( LOCAL_ir_registry_key[ loop] != keycode )
-           continue;
-       
-       LOCAL_ir_registry_fun[ loop ]( keycode, repeated );
-       return;
-   }
-   LOG_INF("Key 0x%04X not registered", keycode );
-}
 
 
 static void handle_received_code( u8_t* buffer, u32_t buffer_n )
@@ -131,7 +108,7 @@ static void handle_received_code( u8_t* buffer, u32_t buffer_n )
        {
             u16_t keycode = buffer[2] | (buffer[3] << 8);
             last_keycode = keycode;
-            handle_received_keycode( last_keycode, false );
+            ui_received_keycode( last_keycode, true, false );
             return;
        }
     }    
@@ -140,7 +117,7 @@ static void handle_received_code( u8_t* buffer, u32_t buffer_n )
         if ( ( buffer[0] == 0x7 ) && ( last_keycode != 0x00 ) )
         {
 
-            handle_received_keycode( last_keycode, true  );
+            ui_received_keycode( last_keycode, true, true  );
             return;
         }
     }

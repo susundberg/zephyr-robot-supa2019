@@ -156,7 +156,39 @@ static void ui_button_receive( uint8_t code_raw )
     
     ui_received_keycode( code_keycode, false, code_raw & UI_QUEUE_BUTTON_ACT );
 }
-    
+
+static u8_t LOCAL_current_state = 0;
+
+static void ui_state_loop()
+{
+   static uint8_t loop_led = 0;
+   uint8_t value = 0;
+   switch ( LOCAL_current_state )
+   {
+       case 0:
+           value = loop_led & 0x01;
+           break;
+       
+       case 1:
+           value = (loop_led & 0x04)*(loop_led & 0x01);
+           break;
+       
+       default:
+           value = loop_led & 0x01;
+           break;
+   }
+   
+   gpio_pin_set( LOCAL_led_out, DT_GPIO_LEDS_LED_GREEN_GPIOS_PIN, value );
+   loop_led += 1;
+}
+
+
+void ui_signal_state( u8_t state )
+{
+    LOCAL_current_state = state;
+}
+
+
 static void ui_main()
 {
    
@@ -167,7 +199,7 @@ static void ui_main()
     
    LOG_INF("UI thread started!");
 
-   uint8_t loop_led = 0;
+
   
    while(1)
    {
@@ -186,10 +218,11 @@ static void ui_main()
       else
       {
           ir_receiver_code( 0x00 );
+          ui_received_keycode( 0x00, true, false );
       }
+      
+      ui_state_loop();
           
-      gpio_pin_set( LOCAL_led_out, DT_GPIO_LEDS_LED_GREEN_GPIOS_PIN, loop_led % 2);
-      loop_led += 1;
       
    }
 }

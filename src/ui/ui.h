@@ -22,6 +22,7 @@ typedef enum
 
 typedef void (*UICmd_callback)( UI_keycode code, bool repeated );
 void ui_receiver_register( UI_keycode code, UICmd_callback callback );
+void ui_signal_state( u8_t state );
 
 #define UI_QUEUE_IR_MASK     0x03
 #define UI_QUEUE_IR_1        0x01

@@ -8,6 +8,7 @@ LOG_MODULE_REGISTER(logic);
 
 #include "../main.h"
 #include "../motor/motors.h"
+#include "../ui/ui.h"
 
 typedef enum
 {
@@ -248,7 +249,7 @@ static bool logic_run_loop()
 
 static void logic_run()
 {
-
+    ui_signal_state( 1 );
     for( ;; )
     {
         bool round_ok = logic_run_loop();
@@ -268,7 +269,7 @@ static void logic_run()
         
     }
     LOG_INF("Rounds done, bailing out!");
-    
+    ui_signal_state( 0 );
     motors_set_callback( NULL );
 }
 
@@ -278,7 +279,7 @@ static void logic_main()
     // Wait for action!
     logic_init();
     LOG_INF("Logic app started!");
-    
+    ui_signal_state( 0 );
     while( true )
     {
 

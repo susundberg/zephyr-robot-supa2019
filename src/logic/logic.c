@@ -8,6 +8,7 @@ LOG_MODULE_REGISTER(logic);
 
 #include "../main.h"
 #include "../motor/motors.h"
+#include "../ui/ui.h"
 
 typedef enum
 {
@@ -28,7 +29,6 @@ typedef struct
 #define LOCAL_queue_size 8
 static Logic_event __aligned(4) LOCAL_queue_buffer[ LOCAL_queue_size ];
 static struct k_msgq LOCAL_queue;
-static bool LOCAL_logic_running = false;
 
 
 #define LOGIC_DISTANCE_MAX_CM 1000    // 10m should be enough for everyone..
@@ -41,8 +41,7 @@ static bool LOCAL_logic_running = false;
 
 static void motorsdone_callback ( Motor_cmd_type reason, int32_t* param, uint32_t param_n )
 {
-   if ( LOCAL_logic_running == false )
-       return;
+
    
    Logic_event cmd;
    
@@ -59,11 +58,11 @@ static void motorsdone_callback ( Motor_cmd_type reason, int32_t* param, uint32_
    ASSERT( k_msgq_put( &LOCAL_queue, &cmd, K_NO_WAIT ) == 0 );
 }
 
-void logic_toggle( )
+void logic_activate( bool is_active )
 {
      Logic_event cmd;
      
-     if ( LOCAL_logic_running )
+     if ( is_active == false )
      {
          cmd.opcode = LOGIC_CMD_STOP;
          
@@ -250,7 +249,7 @@ static bool logic_run_loop()
 
 static void logic_run()
 {
-    LOCAL_logic_running = true;
+    ui_signal_state( 1 );
     for( ;; )
     {
         bool round_ok = logic_run_loop();
@@ -260,11 +259,17 @@ static void logic_run()
             LOG_INF("Round success, start again.");
             continue;
         }
+        else
+        {
+            LOG_INF("Error while doing, sending stop to motors!");
+            motors_send_cmd( MOTOR_CMD_STOP, NULL, 0 );
+            motors_control_function( false );             
+        }
         break;
         
     }
     LOG_INF("Rounds done, bailing out!");
-    LOCAL_logic_running = false;
+    ui_signal_state( 0 );
     motors_set_callback( NULL );
 }
 
@@ -274,7 +279,7 @@ static void logic_main()
     // Wait for action!
     logic_init();
     LOG_INF("Logic app started!");
-    
+    ui_signal_state( 0 );
     while( true )
     {
 

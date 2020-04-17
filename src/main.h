@@ -27,6 +27,15 @@ void supa_fatal_handler( const char* module, int line );
 #define UNLIKELY(expr) ( __builtin_expect(!!(expr), 0))
 #define ABS(x) ((x)<0 ? -(x) : (x))
 
+#define DEV_GET_CHECK( _dev, _name ) { \
+    _dev = device_get_binding( _name ); \
+    if ( _dev == NULL )\
+    {\
+        FATAL_ERROR("Cannot find device: %s", _name );\
+        return;\
+    }\
+}
+
 #define OS_DEFAULT_STACKSIZE 1024
 #define OS_DEFAULT_PRIORITY  7
 

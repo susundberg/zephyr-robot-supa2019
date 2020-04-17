@@ -34,7 +34,7 @@
 #define SUPA_MODULE "mai"
 #include "main.h"
 #include "motor/motors.h"
-#include "ir_receiver/ir_receiver.h"
+#include "ui/ui.h"
 #include "logic/logic.h"
 
 #include "utils/utils.h"
@@ -56,10 +56,10 @@ void supa_fatal_handler( const char* module, int line )
     k_sys_fatal_error_handler(0xFFFF, NULL );
 }
   
-static void ircmd_move( IR_keycode code, bool repeated );
-static void ircmd_function( IR_keycode code, bool repeated );
-static void ircmd_auto_on( IR_keycode code, bool repeated );
-static void ircmd_power( IR_keycode code, bool repeated );
+static void ircmd_move( UI_keycode code, bool repeated );
+static void ircmd_function( UI_keycode code, bool repeated );
+static void ircmd_auto_on( UI_keycode code, bool repeated );
+static void ircmd_power( UI_keycode code, bool repeated );
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 {
@@ -70,27 +70,32 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
     CODE_UNREACHABLE;
 }
 
+#define BLINK_LED_NAME DT_GPIO_LEDS_LED_RED_LABEL
 void main(void)
 {
     u32_t cnt = 0;
     struct device* dev;
 
-    dev = device_get_binding( DT_ALIAS_LED0_GPIOS_CONTROLLER );
-    RET_CHECK( gpio_pin_configure( dev, DT_ALIAS_LED0_GPIOS_PIN, GPIO_OUTPUT | DT_ALIAS_LED0_GPIOS_FLAGS ) );
+    dev = device_get_binding( DT_GPIO_LEDS_LED_RED_GPIOS_CONTROLLER );
+    RET_CHECK( gpio_pin_configure( dev, DT_GPIO_LEDS_LED_RED_GPIOS_PIN, GPIO_OUTPUT | DT_GPIO_LEDS_LED_RED_GPIOS_FLAGS ) );
     
     
-    ir_receiver_register( KEY_VOL_UP, ircmd_move );
-    ir_receiver_register( KEY_VOL_DOWN, ircmd_move );
-    ir_receiver_register( KEY_LEFT, ircmd_move);
-    ir_receiver_register( KEY_RIGHT, ircmd_move );    
-    ir_receiver_register( KEY_FUNCTION, ircmd_function );
-    ir_receiver_register( KEY_AUTO_ON, ircmd_auto_on );
-    ir_receiver_register( KEY_POWER, ircmd_power );
+    ui_receiver_register( IRKEY_VOL_UP, ircmd_move );
+    ui_receiver_register( IRKEY_VOL_DOWN, ircmd_move );
+    ui_receiver_register( IRKEY_LEFT, ircmd_move);
+    ui_receiver_register( IRKEY_RIGHT, ircmd_move );    
+    ui_receiver_register( IRKEY_FUNCTION, ircmd_function );
+    ui_receiver_register( IRKEY_AUTO_ON, ircmd_auto_on );
+    ui_receiver_register( IRKEY_POWER, ircmd_power );
+
+    ui_receiver_register( UI_SW_0, ircmd_auto_on );
+    ui_receiver_register( UI_SW_1, ircmd_function );
+    
     
     LOG_INF("Robot control task started!");
     while (1) 
     {
-      gpio_pin_set(dev, DT_ALIAS_LED0_GPIOS_PIN, cnt % 2);
+      gpio_pin_set(dev, DT_GPIO_LEDS_LED_RED_GPIOS_PIN, cnt % 2);
       cnt++;
       k_sleep( 250 );
     }
@@ -98,7 +103,7 @@ void main(void)
 
 
 
-static void ircmd_move( IR_keycode code, bool repeated )
+static void ircmd_move( UI_keycode code, bool repeated )
 {
     float params[3] = {0};
     
@@ -111,23 +116,23 @@ static void ircmd_move( IR_keycode code, bool repeated )
     uint32_t opcode = 0;
     switch (code)
     {
-        case KEY_VOL_UP:
+        case IRKEY_VOL_UP:
             params[0] = MOTOR_TEST_DRIVE_DISTANCE;
             params[1] = MOTOR_TEST_DRIVE_DISTANCE;
             params[2] = MOTOR_MAX_SPEED_CM_S;
             opcode    = MOTOR_CMD_DRIVE;
             break;
-        case KEY_VOL_DOWN:
+        case IRKEY_VOL_DOWN:
             params[0] = -MOTOR_TEST_DRIVE_DISTANCE;
             params[1] = -MOTOR_TEST_DRIVE_DISTANCE;
             params[2] = MOTOR_MAX_SPEED_CM_S;
             opcode    = MOTOR_CMD_DRIVE;
             break;            
-        case KEY_LEFT:
+        case IRKEY_LEFT:
             params[0] = -MOTOR_TEST_TURN_ANGLE;
             opcode    = MOTOR_CMD_ROTATE;
             break;        
-        case KEY_RIGHT:
+        case IRKEY_RIGHT:
             params[0] = +MOTOR_TEST_TURN_ANGLE;
             opcode    = MOTOR_CMD_ROTATE;
             break; 
@@ -138,34 +143,26 @@ static void ircmd_move( IR_keycode code, bool repeated )
     motors_send_cmd( opcode, params, 3 );
 }
 
-static void ircmd_function( IR_keycode code, bool repeated )
+static void ircmd_function( UI_keycode code, bool pressed )
 {
-    static bool value = false;
-    
-    if ( repeated ) 
-        return;
-
-    value = !value;
-    motors_control_function( value );
+    motors_control_function( pressed );
 }
 
-static void ircmd_power( IR_keycode code, bool repeated )
+static void ircmd_power( UI_keycode code, bool pressed )
 {
-    if ( repeated ) 
+    if (!pressed)
         return;
-
+    
     motors_send_cmd( MOTOR_CMD_STOP, NULL, 0 );
     motors_control_function( false ); 
        
 }
 
-static void ircmd_auto_on( IR_keycode code, bool repeated )
+static void ircmd_auto_on( UI_keycode code, bool pressed )
 {
-    if ( repeated ) 
-        return;
-    
-    logic_toggle();
+    logic_activate( pressed );
 }
+
 
 static int cmd_reboot(const struct shell *shell, size_t argc, char **argv)
 {

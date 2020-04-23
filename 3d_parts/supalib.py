@@ -152,7 +152,7 @@ def creta_mesh_from( source, name = None, save_to = None, save_format = "stl", v
    mesh = App.activeDocument().addObject("Mesh::Feature", name)
    __shape = source.Shape.copy(False)
    __shape.Placement = source.getGlobalPlacement()
-   mesh.Mesh = MeshPart.meshFromShape(Shape=__shape, LinearDeflection=0.1, AngularDeflection=0.523599, Relative=False)
+   mesh.Mesh = MeshPart.meshFromShape(Shape=__shape, LinearDeflection=0.01, AngularDeflection=0.0523599, Relative=False)
    mesh.Label=source.Label + " (Meshed)"
    del __shape
    show( source, False )

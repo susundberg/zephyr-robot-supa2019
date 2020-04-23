@@ -127,25 +127,45 @@ static bool wait_for_motorstermination( uint32_t wait_event, int32_t* params, in
     
 }
 
-static void motors_send_drive_cmd(  float distance )
+static void motors_send_drive_cmd( uint32_t opcode, float distance )
 {
      float params[3];
      params[0] = distance;
      params[1] = distance;
      params[2] = MOTOR_MAX_SPEED_CM_S;
      
-     motors_send_cmd( MOTOR_CMD_DRIVE, params, 3 );
+     motors_send_cmd( opcode, params, 3 );
 }
 
-static bool motors_send_wait_drive_cmd(  float distance )
+
+
+
+static bool motors_send_wait_drive_cmd_custom( float distance, float ignore_bumber )
 {
-    motors_send_drive_cmd(  distance );
+    uint32_t opcode = MOTOR_CMD_DRIVE;
+    
+    if ( ignore_bumber )
+        opcode = MOTOR_CMD_DRIVE_IGN_BUMBER;
+    
+    motors_send_drive_cmd( opcode, distance );
     
     if ( wait_for_motorstermination( MOTOR_CMD_EV_DONE, NULL, 0  ) == false )
         return false;
     
     return true;
 }
+
+static bool motors_send_wait_drive_cmd( float distance )
+{
+    return motors_send_wait_drive_cmd_custom( distance, false );
+}
+
+static bool motors_send_wait_drive_nob_cmd( float distance )
+{
+    return motors_send_wait_drive_cmd_custom( distance, true );
+}
+
+
 
 static bool motors_send_wait_rotate_cmd(  float angle )
 {
@@ -165,7 +185,7 @@ static bool logic_run_loop()
     int32_t distance_driven;
     
     // Ok, first we start going as far as possible
-    motors_send_drive_cmd(  LOGIC_DISTANCE_MAX_CM );
+    motors_send_drive_cmd( MOTOR_CMD_DRIVE, LOGIC_DISTANCE_MAX_CM );
    
     if ( wait_for_motorstermination( MOTOR_CMD_EV_BUMBER, &distance_driven, 1  ) == false )
         return false;
@@ -179,7 +199,7 @@ static bool logic_run_loop()
     }
     
     // ok, bumber hit, then back up
-    if ( motors_send_wait_drive_cmd(  -LOGIC_DISTANCE_BACKUP_CM ) == false )
+    if ( motors_send_wait_drive_nob_cmd(  -LOGIC_DISTANCE_BACKUP_CM ) == false )
         return false;
     
     LOG_DEBUG_PROGRESS;
@@ -203,14 +223,15 @@ static bool logic_run_loop()
     LOG_DEBUG_PROGRESS;
     
     // Make sure the grass is cut at the end
-    motors_send_drive_cmd(  LOGIC_DISTANCE_MAX_MAKE_SURE);
+    motors_send_drive_cmd( MOTOR_CMD_DRIVE, LOGIC_DISTANCE_MAX_MAKE_SURE);
+    
     if ( wait_for_motorstermination( MOTOR_CMD_EV_BUMBER, NULL, 0 ) == false )
         return false;
     
     LOG_DEBUG_PROGRESS;
     
     // ok, bumber hit, then back up
-    if ( motors_send_wait_drive_cmd(  -LOGIC_DISTANCE_BACKUP_CM ) == false )
+    if ( motors_send_wait_drive_nob_cmd(  -LOGIC_DISTANCE_BACKUP_CM ) == false )
         return false;
 
     LOG_DEBUG_PROGRESS;

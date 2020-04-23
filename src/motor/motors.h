@@ -12,7 +12,7 @@
 #define MOTOR_TICKS_TO_CM       0.0107653f
 #define MOTOR_CM_PER_SEC_TO_PWM 25.0f
 #define MOTOR_PWM_OFFSET        150.0f
-#define DRIVE_CM_PER_ANGLE      0.11852f
+#define DRIVE_CM_PER_ANGLE      0.10159f
 
 void motors_init();
 void motors_abort();
@@ -24,11 +24,12 @@ void motors_set_pid( int motor,  const float* coeffs );
 typedef enum
 {
     MOTOR_CMD_INVALID = 0,
-    MOTOR_CMD_DRIVE,         // param 0 = distance left, param 1 = distance right
-    MOTOR_CMD_ROTATE,        // param 0 = angle in deg
+    MOTOR_CMD_DRIVE,             // param 0 = distance left, param 1 = distance right
+    MOTOR_CMD_DRIVE_IGN_BUMBER,  // as above 
+    MOTOR_CMD_ROTATE,           // param 0 = angle in deg
     MOTOR_CMD_STOP,
     MOTOR_CMD_TEST,
-    MOTOR_CMD_EV_BUMBER,     // Drive was terminated due bumber hit
+    MOTOR_CMD_EV_BUMBER = 100,     // Drive was terminated due bumber hit
     MOTOR_CMD_EV_DONE,       // Drive was terminated due distance end
     MOTOR_CMD_EV_CANCELLED   // Drive was terminated due another command
 } Motor_cmd_type; 

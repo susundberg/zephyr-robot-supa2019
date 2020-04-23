@@ -212,7 +212,7 @@ static void motor_cmd_test( const Motor_cmd* cmd )
 }
 
 
-static void motor_cmd_drive( float* distances, float max_speed)
+static void motor_cmd_drive( float* distances, float max_speed, bool use_bumbers )
 {
     static Motor_ramp LOCAL_target[2];
     s64_t drive_start_ticks;
@@ -289,19 +289,27 @@ static void motor_cmd_drive( float* distances, float max_speed)
         
         if ( cmd != NULL )
         {
-            LOG_INF("Command %d received while driving, stopping!", cmd->opcode );
-            
-            if ( cmd->opcode != MOTOR_CMD_EV_BUMBER )
+            if ( (use_bumbers == false) && ( cmd->opcode == MOTOR_CMD_EV_BUMBER ) )
             {
-               end_event = MOTOR_CMD_EV_CANCELLED; 
+                LOG_INF("Bumber hit ignored, due drive without bumbers!");
+                
             }
             else
             {
-                end_event = MOTOR_CMD_EV_BUMBER;
+                LOG_INF("Command %d received while driving, stopping!", cmd->opcode );
+                if ( cmd->opcode != MOTOR_CMD_EV_BUMBER )
+                {
+                   end_event = MOTOR_CMD_EV_CANCELLED; 
+                }
+                else
+                {
+                    end_event = MOTOR_CMD_EV_BUMBER;
+                }
+                break;
             }
-            break;
         }
     }
+    
     // make sure speed is zero.
     motor_cmd_stop( NULL );
     motor_timers_get_location( position_cm );
@@ -328,7 +336,7 @@ static void motor_cmd_rotate( float angle )
     to_drive[0] =   rotating_wheel;
     to_drive[1] =  -rotating_wheel;
     
-    motor_cmd_drive( to_drive, MOTOR_MAX_SPEED_CM_S*0.75f );
+    motor_cmd_drive( to_drive, MOTOR_MAX_SPEED_CM_S*0.75f, true );
 }
 
 void motors_main()
@@ -356,9 +364,14 @@ void motors_main()
             
             case MOTOR_CMD_DRIVE:
                 memcpy( param_help, cmd->params, sizeof(float)*MOTOR_MAX_PARAMS);
-                motor_cmd_drive( param_help, param_help[2] );
+                motor_cmd_drive( param_help, param_help[2], true );
                 break;
             
+            case MOTOR_CMD_DRIVE_IGN_BUMBER:
+                memcpy( param_help, cmd->params, sizeof(float)*MOTOR_MAX_PARAMS);
+                motor_cmd_drive( param_help, param_help[2], false );
+                break;
+                
             case MOTOR_CMD_ROTATE:
                 memcpy( param_help, cmd->params, sizeof(float)*1);
                 motor_cmd_rotate( param_help[0] );

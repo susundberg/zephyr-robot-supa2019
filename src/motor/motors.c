@@ -84,7 +84,7 @@ void motors_send_cmd( uint32_t opcode, void* params, uint32_t nparams )
     ASSERT_ISR( k_msgq_put( &LOCAL_queue, &cmd, K_NO_WAIT ) == 0 );
 }
 
-static const Motor_cmd* motor_queue_get( uint32_t wait_time )
+static const Motor_cmd* motor_queue_get( k_timeout_t wait_time )
 {
    static Motor_cmd cmd;
    
@@ -190,7 +190,7 @@ static void motor_cmd_test( const Motor_cmd* cmd )
            motor_pwm[loop] = motor_timers_set_speed( loop, speed_target*25.0f );
         }
 
-        k_sleep( time_diff_sec * 1000 );
+        k_sleep( K_MSEC( time_diff_sec * 1000 ) );
         
         
         motor_timers_get_location( position_cm );
@@ -218,7 +218,7 @@ static void motor_cmd_drive( float* distances, float max_speed, bool use_bumbers
     s64_t drive_start_ticks;
     float position_cm[2];
     
-    Motor_cmd_type end_event; 
+    Motor_cmd_type end_event = MOTOR_CMD_INVALID;
     
     
     LOG_INF("Drive %d %d mm", ROUND_INT(distances[0]*10.0f), ROUND_INT(distances[1]*10.0f) );
@@ -273,7 +273,8 @@ static void motor_cmd_drive( float* distances, float max_speed, bool use_bumbers
             
             if ( ABS(pwm_out) > MOTOR_PWM_SANITY_CHECK_LIMIT ) 
             {
-                FATAL_ERROR("Motor %d pwm invalid %d!", loop, (int)pwm_out );
+                end_event = MOTOR_CMD_EV_STUCK;   
+                LOG_ERR("Motor %d pwm invalid %d!", loop, (int)pwm_out );
                 break;                
             }
  
@@ -283,9 +284,12 @@ static void motor_cmd_drive( float* distances, float max_speed, bool use_bumbers
             // printf("T=%0.1f - pos: %0.1f -- speed: %0.1f pwm %d\n", time_sec, pos_cm, speed_cm_per_sec,  motor_pwm ); 
         }
         
+        if ( end_event != MOTOR_CMD_INVALID ) 
+            break;
+        
         // printk("PWM %d %d\n", mot_pwm[0], mot_pwm[1] );
         
-        const Motor_cmd* cmd = motor_queue_get( MOTOR_CONTROL_LOOP_MS );
+        const Motor_cmd* cmd = motor_queue_get( K_MSEC( MOTOR_CONTROL_LOOP_MS )  );
         
         if ( cmd != NULL )
         {
@@ -399,8 +403,8 @@ void motors_main()
 
 
 
-K_THREAD_DEFINE( motor_thread, OS_DEFAULT_STACKSIZE, motors_main, NULL, NULL, NULL,
-                 OS_DEFAULT_PRIORITY, 0, K_NO_WAIT);
+K_THREAD_DEFINE( motor_thread, 2*OS_DEFAULT_STACKSIZE, motors_main, NULL, NULL, NULL,
+                 OS_DEFAULT_PRIORITY, 0, 0);
 
 
 

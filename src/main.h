@@ -36,7 +36,7 @@ void supa_fatal_handler( const char* module, int line );
     }\
 }
 
-#define OS_DEFAULT_STACKSIZE 1024
+#define OS_DEFAULT_STACKSIZE 512
 #define OS_DEFAULT_PRIORITY  7
 
    

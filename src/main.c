@@ -97,7 +97,7 @@ void main(void)
     {
       gpio_pin_set(dev, DT_GPIO_LEDS_LED_RED_GPIOS_PIN, cnt % 2);
       cnt++;
-      k_sleep( 250 );
+      k_sleep( K_MSEC(250) );
     }
 }
 
@@ -253,12 +253,27 @@ static int cmd_motor_drive(const struct shell *shell, size_t argc, char **argv)
     return 0; 
 }
 
+static int cmd_motor_rotate(const struct shell *shell, size_t argc, char **argv)
+{
+   int params[1];
+   ARG_UNUSED(argc);
+    if ( parse_i32(argv[1], &params[0]) )
+    {
 
+        SHE_ERR("Invalid arguments.\n");
+        return -EINVAL;
+    }
+    float params_flt[1] = { params[0] / 10.0f }; 
+    
+    motors_send_cmd( MOTOR_CMD_ROTATE, params_flt, 1 );
+    return 0; 
+}
 
 SYS_INIT( supa_bootloader_check, PRE_KERNEL_1, 0 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_pwm,
         SHELL_CMD_ARG(drive, NULL, "drive <dist_left mm> <dist_right mm> <speed mm/sec>", cmd_motor_drive, 4, 0 ),
+        SHELL_CMD_ARG(rot, NULL, "rotate <angle>", cmd_motor_rotate, 2, 0 ),
         SHELL_CMD_ARG(stop, NULL, "stop <>", cmd_motor_stop, 1, 0 ),
         SHELL_CMD_ARG(pid, NULL, "pid <>", cmd_motor_pid, 4, 0 ),                       
         SHELL_CMD_ARG(test, NULL, "test <time_ramp_sec> <time_const_sec> <max_speed cm/sec>", cmd_motor_test, 4, 0 ),

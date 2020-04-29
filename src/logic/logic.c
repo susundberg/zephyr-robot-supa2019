@@ -31,11 +31,11 @@ static Logic_event __aligned(4) LOCAL_queue_buffer[ LOCAL_queue_size ];
 static struct k_msgq LOCAL_queue;
 
 
-#define LOGIC_DISTANCE_MAX_CM 1000    // 10m should be enough for everyone..
-#define LOGIC_DISTANCE_BACKUP_CM 10
-#define LOGIC_DISTANCE_MAX_MAKE_SURE 20
-#define LOGIC_DISTANCE_NEXT_LANE_CM 10
-#define LOGIC_ROTATE_ANGLE          90
+#define LOGIC_DISTANCE_MAX_CM        1000    // 10m should be enough for everyone..
+#define LOGIC_DISTANCE_BACKUP_CM     20
+#define LOGIC_DISTANCE_MAX_MAKE_SURE 40
+#define LOGIC_DISTANCE_NEXT_LANE_CM  10
+#define LOGIC_ROTATE_ANGLE           90
 
 
 
@@ -82,7 +82,7 @@ static void logic_init()
 }
 
 
-static const Logic_event* logic_queue_get( uint32_t wait_time )
+static const Logic_event* logic_queue_get( k_timeout_t wait_time )
 {
    static Logic_event cmd;
    
@@ -98,6 +98,26 @@ static const Logic_event* logic_queue_get( uint32_t wait_time )
       
       return NULL;
    }   
+}
+
+static void set_ui_termination_reason(uint32_t event )
+{
+    switch( event )
+    {
+        case MOTOR_CMD_EV_BUMBER:
+            ui_signal_state( UI_STATE_PROGRAM_ERROR_1 );
+            return;
+        case MOTOR_CMD_EV_DONE:
+            ui_signal_state( UI_STATE_PROGRAM_ERROR_2 );
+            return;
+        case MOTOR_CMD_EV_STUCK:
+            ui_signal_state( UI_STATE_PROGRAM_ERROR_3 );
+            return;
+        case MOTOR_CMD_EV_CANCELLED:
+            ui_signal_state( UI_STATE_PROGRAM_ERROR_4 );
+            return;            
+    }
+
 }
 
 
@@ -116,12 +136,18 @@ static bool wait_for_motorstermination( uint32_t wait_event, int32_t* params, in
             
             return true;
         }
+        else
+        {
+            LOG_INF("Was waiting for opcode %d, bailing out!", wait_event );
+            set_ui_termination_reason( event->params[0] );
+        }
     }
     else
     {
          LOG_INF("Logic received opcode %d", event->opcode );
+         ui_signal_state( UI_STATE_PROGRAM_ERROR_4 );
     }
-    
+
     LOG_INF("Invalid opcode or event, exit!");
     return false;
     
@@ -195,6 +221,7 @@ static bool logic_run_loop()
     if( distance_driven < LOGIC_DISTANCE_BACKUP_CM )
     {
         LOG_INF("Distance to drive is too short, bailing out!");
+        ui_signal_state( UI_STATE_PROGRAM_ERROR_1 );
         return false;
     }
     
@@ -270,7 +297,7 @@ static bool logic_run_loop()
 
 static void logic_run()
 {
-    ui_signal_state( 1 );
+    ui_signal_state( UI_STATE_PROGRAM_RUN );
     for( ;; )
     {
         bool round_ok = logic_run_loop();
@@ -290,7 +317,6 @@ static void logic_run()
         
     }
     LOG_INF("Rounds done, bailing out!");
-    ui_signal_state( 0 );
     motors_set_callback( NULL );
 }
 
@@ -300,7 +326,7 @@ static void logic_main()
     // Wait for action!
     logic_init();
     LOG_INF("Logic app started!");
-    ui_signal_state( 0 );
+    ui_signal_state( UI_STATE_PROGRAM_IDLE );
     while( true )
     {
 
@@ -328,4 +354,4 @@ static void logic_main()
 
 
 K_THREAD_DEFINE( logic_thread, OS_DEFAULT_STACKSIZE, logic_main, NULL, NULL, NULL,
-                 OS_DEFAULT_PRIORITY, 0, K_NO_WAIT);
+                 OS_DEFAULT_PRIORITY, 0, 0);

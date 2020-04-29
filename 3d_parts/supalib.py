@@ -5,6 +5,7 @@ import FreeCADGui as Gui
 
 import math
 from pathlib import Path
+import Draft
 
 EPS = 0.01
 
@@ -26,6 +27,22 @@ def make_name( name, prefix ):
     return name
 
 
+def face_create( points, closed=False, face=False):
+    
+    points = [ App.Vector( x[0], x[1], 0.0 ) for x in points ]
+    return Draft.makeWire( points, closed=closed,face=face )
+
+def face_revolve( face, revolve_axis, revolve_offset ):
+    #revolve_axis = App.Vector( *revolve_axis )
+    #revolve_offset = App.Vector( *revolve_axis )
+    rev = App.activeDocument().addObject("Part::Revolution", make_name( None, "revolve" ) )
+    rev.Source = face
+    rev.Axis = tuple( revolve_axis )
+    rev.Base = tuple( revolve_offset )
+    rev.Solid = True
+    show( face, False ) 
+    return relocate( rev, place=[ -x for x in revolve_offset ] )
+    
 
 def create_triangle( xsize, ysize, zsize, place=(0,0,0), rotate=(1,0,0,0) ):
     """ Create triangle that is triangle in XZ coordinages, with Y beeing the thickness" """

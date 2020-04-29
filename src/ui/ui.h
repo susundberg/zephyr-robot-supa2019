@@ -20,9 +20,21 @@ typedef enum
     
 } UI_keycode;
 
+typedef enum 
+{
+    UI_STATE_PROGRAM_IDLE = 0x0,
+    UI_STATE_PROGRAM_RUN  = 0x1,
+    
+    UI_STATE_PROGRAM_ERROR_1 = 0x11,
+    UI_STATE_PROGRAM_ERROR_2 = 0x12, 
+    UI_STATE_PROGRAM_ERROR_3 = 0x13, 
+    UI_STATE_PROGRAM_ERROR_4 = 0x14, 
+    
+} UI_status;
+
 typedef void (*UICmd_callback)( UI_keycode code, bool repeated );
 void ui_receiver_register( UI_keycode code, UICmd_callback callback );
-void ui_signal_state( u8_t state );
+void ui_signal_state( UI_status state );
 
 #define UI_QUEUE_IR_MASK     0x03
 #define UI_QUEUE_IR_1        0x01

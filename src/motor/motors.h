@@ -4,15 +4,15 @@
 
 
 #define MOTOR_MAX_ACC_CM_SS   20.0f   // cm per sec^2
-#define MOTOR_MAX_SPEED_CM_S  5.0f  // cm per sec
+#define MOTOR_MAX_SPEED_CM_S  12.0f   // cm per sec
 #define MOTOR_MAX_PARAMS      3
 
 
 // motor test 1 10 5 -- yielded around 10506 ticks -> 5 rounds - each is 22.62 cm long -> 5*(22.62) / 10506 = 0.0107653 CM / tick
-#define MOTOR_TICKS_TO_CM       0.0107653f
+#define MOTOR_TICKS_TO_CM       0.027451515f
 #define MOTOR_CM_PER_SEC_TO_PWM 25.0f
 #define MOTOR_PWM_OFFSET        150.0f
-#define DRIVE_CM_PER_ANGLE      0.10159f
+#define DRIVE_CM_PER_ANGLE      0.2590545f
 
 void motors_init();
 void motors_abort();
@@ -31,6 +31,7 @@ typedef enum
     MOTOR_CMD_TEST,
     MOTOR_CMD_EV_BUMBER = 100,     // Drive was terminated due bumber hit
     MOTOR_CMD_EV_DONE,       // Drive was terminated due distance end
+    MOTOR_CMD_EV_STUCK,      // Drive was terminated due getting stuck. 
     MOTOR_CMD_EV_CANCELLED   // Drive was terminated due another command
 } Motor_cmd_type; 
 

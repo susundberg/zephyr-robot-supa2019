@@ -158,34 +158,54 @@ static void ui_button_receive( uint8_t code_raw )
 }
 
 static u8_t LOCAL_current_state = 0;
-
+static u8_t LOCAL_loop_led = 0;
+ 
 static void ui_state_loop()
 {
-   static uint8_t loop_led = 0;
+  
+   
+   
    uint8_t value = 0;
-   switch ( LOCAL_current_state )
+    
+   if ( ( LOCAL_current_state & 0x10 ) ) 
    {
-       case 0:
-           value = loop_led & 0x01;
-           break;
        
-       case 1:
-           value = (loop_led & 0x04)*(loop_led & 0x01);
-           break;
-       
-       default:
-           value = loop_led & 0x01;
-           break;
+       if ( LOCAL_loop_led & 0x10 ) // delay period (~3sec) for not blinkin
+       {
+           value = 0;
+       }
+       else
+       {  // blink the code.
+           uint8_t count        = (LOCAL_loop_led % 0x0F) >> 1;
+           uint8_t count_wanted = LOCAL_current_state & 0x0F;
+           value = ( count < count_wanted ) ? 1 : 0 ;
+           value = value & ( LOCAL_loop_led & 0x01 );
+       }
    }
    
+   else
+   { // Normal states, 
+       if ( LOCAL_current_state == UI_STATE_PROGRAM_RUN ) 
+       {
+           value = LOCAL_loop_led & 0x01; // blink fast
+       }
+       else
+       {
+           value = LOCAL_loop_led & 0x04; // blink slooow
+       }
+   }
+  
+   
    gpio_pin_set( LOCAL_led_out, DT_GPIO_LEDS_LED_GREEN_GPIOS_PIN, value );
-   loop_led += 1;
+   LOCAL_loop_led += 1;
 }
 
 
-void ui_signal_state( u8_t state )
+void ui_signal_state( UI_status state )
 {
+    LOG_INF("UI set led state: 0x%02X", state );
     LOCAL_current_state = state;
+    LOCAL_loop_led = 0;
 }
 
 
@@ -204,7 +224,7 @@ static void ui_main()
    while(1)
    {
       u8_t code_new;
-      if ( k_msgq_get(&LOCAL_ui_queue, &code_new, 100 ) == 0  )
+      if ( k_msgq_get(&LOCAL_ui_queue, &code_new, K_MSEC( 200 ) ) == 0  )
       {
           if ( code_new & UI_QUEUE_IR_MASK)
           {
@@ -229,7 +249,7 @@ static void ui_main()
 
 
 
-K_THREAD_DEFINE( ui_thread, OS_DEFAULT_STACKSIZE*2, ui_main, NULL, NULL, NULL,
-                 OS_DEFAULT_PRIORITY, 0, K_NO_WAIT);
+K_THREAD_DEFINE( ui_thread, OS_DEFAULT_STACKSIZE, ui_main, NULL, NULL, NULL,
+                 OS_DEFAULT_PRIORITY, 0, 0);
 
 

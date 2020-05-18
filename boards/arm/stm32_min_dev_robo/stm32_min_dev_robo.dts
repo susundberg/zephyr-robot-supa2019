@@ -13,11 +13,11 @@
 
 	leds {
 	    compatible = "gpio-leds";
-		led_red: led_red {
+		led_red {
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 			label = "led_red";
 		};
-		led_green: led_green {
+		led_green  {
 			gpios = <&gpioc 14 GPIO_ACTIVE_HIGH>;
 			label = "led_green";
 		};		
@@ -27,15 +27,15 @@
 	
 	buttons {
 		compatible = "gpio-keys";
-		button_sw0: button_sw0 {
+		button_sw0 {
 			label = "button sw0";
 			gpios = <&gpioa 1 GPIO_INT_ACTIVE_HIGH >;
 		};
-		button_sw1: button_sw1 {
+		button_sw1 {
 			label = "button sw1";
 			gpios = <&gpioa 2 GPIO_INT_ACTIVE_HIGH >;
 		};
-    };
+        };
     
 
 	ir_receiver_input
@@ -50,19 +50,19 @@
 	motor_control
 	{
 	   compatible = "gpio-leds";
-	   motor_1a: motor_1a {
+	   motor_1a {
 			gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
 			label = "motor 1a";
 	   };
-	   motor_1b: motor_1b {
+	   motor_1b {
 			gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
 			label = "motor 1b";
 	   };
-	   motor_2a: motor_2a {
+	   motor_2a {
 			gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
 			label = "motor 2a";
 	   };
-	   motor_2b: motor_2b {
+	   motor_2b {
 			gpios = <&gpiob 15 GPIO_ACTIVE_HIGH>;
 			label = "motor 2b";
 	   };
@@ -88,6 +88,18 @@
 	
 
 };
+
+&adc1 {
+	status = "okay";
+
+	adc_map: adcmap {
+	    compatible="adc-map";
+	    io-channels = <&adc1 3>, <&adc1 4>; 
+	    io-channel-names = "BVOLT", "BMOTOR_CURR";
+	};
+
+};
+
 
 &usart1 {
 	parity = <2>;

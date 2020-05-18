@@ -36,7 +36,7 @@
 #include "motor/motors.h"
 #include "ui/ui.h"
 #include "logic/logic.h"
-
+#include "monitor/monitor.h"
 #include "utils/utils.h"
 #include "utils/boot.h"
 
@@ -76,6 +76,8 @@ void main(void)
     u32_t cnt = 0;
     struct device* dev;
 
+    monitor_init();
+    
     dev = device_get_binding( DT_GPIO_LEDS_LED_RED_GPIOS_CONTROLLER );
     RET_CHECK( gpio_pin_configure( dev, DT_GPIO_LEDS_LED_RED_GPIOS_PIN, GPIO_OUTPUT | DT_GPIO_LEDS_LED_RED_GPIOS_FLAGS ) );
     
@@ -98,6 +100,8 @@ void main(void)
       gpio_pin_set(dev, DT_GPIO_LEDS_LED_RED_GPIOS_PIN, cnt % 2);
       cnt++;
       k_sleep( K_MSEC(250) );
+      
+      monitor_update();
     }
 }
 
@@ -269,6 +273,22 @@ static int cmd_motor_rotate(const struct shell *shell, size_t argc, char **argv)
     return 0; 
 }
 
+static int cmd_test_ui(const struct shell *shell, size_t argc, char **argv)
+{
+   int params[1];
+   ARG_UNUSED(argc);
+    if ( parse_i32(argv[1], &params[0]) )
+    {
+
+        SHE_ERR("Invalid arguments.\n");
+        return -EINVAL;
+    }
+    LOG_INF("Set UI state x%02X", params[0] );
+    ui_signal_state( params[0] );
+    return 0; 
+}
+
+
 SYS_INIT( supa_bootloader_check, PRE_KERNEL_1, 0 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_pwm,
@@ -283,4 +303,5 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_pwm,
 SHELL_CMD_REGISTER(motor, &sub_pwm, "MOTOR commands", NULL);
 SHELL_CMD_ARG_REGISTER(reset, NULL, "RESTART system", cmd_reboot, 0, 0);
 SHELL_CMD_ARG_REGISTER(bootloader, NULL, "REBOOT system to bootloader", cmd_bootloader, 0, 0);
+SHELL_CMD_ARG_REGISTER(test_ui, NULL, "TEST_UIsystem", cmd_test_ui, 2, 0);
 

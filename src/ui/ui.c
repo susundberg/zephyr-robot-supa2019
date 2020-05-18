@@ -176,7 +176,7 @@ static void ui_state_loop()
        }
        else
        {  // blink the code.
-           uint8_t count        = (LOCAL_loop_led % 0x0F) >> 1;
+           uint8_t count        = (LOCAL_loop_led & 0x0F) >> 1;
            uint8_t count_wanted = LOCAL_current_state & 0x0F;
            value = ( count < count_wanted ) ? 1 : 0 ;
            value = value & ( LOCAL_loop_led & 0x01 );

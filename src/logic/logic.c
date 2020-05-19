@@ -6,17 +6,13 @@
 #define SUPA_MODULE "loc"
 LOG_MODULE_REGISTER(logic);
 
+
+#include "logic.h"
 #include "../main.h"
 #include "../motor/motors.h"
 #include "../ui/ui.h"
 
-typedef enum
-{
-    LOGIC_CMD_INVALID = 0,
-    LOGIC_CMD_START,
-    LOGIC_CMD_STOP,
-    LOGIC_EVENT_MOTOR,
-} Logic_event_type;
+
 
 typedef struct
 {
@@ -35,7 +31,7 @@ static struct k_msgq LOCAL_queue;
 #define LOGIC_DISTANCE_BACKUP_CM     20
 #define LOGIC_DISTANCE_MAX_MAKE_SURE 40
 #define LOGIC_DISTANCE_NEXT_LANE_CM  10
-#define LOGIC_ROTATE_ANGLE           90
+#define LOGIC_ROTATE_ANGLE           175
 
 
 
@@ -58,19 +54,18 @@ static void motorsdone_callback ( Motor_cmd_type reason, int32_t* param, uint32_
    ASSERT( k_msgq_put( &LOCAL_queue, &cmd, K_NO_WAIT ) == 0 );
 }
 
-void logic_activate( bool is_active )
+void logic_send( Logic_event_type event )
 {
-     Logic_event cmd;
+     Logic_event cmd = {0};
      
-     if ( is_active == false )
+     if ( event ==  LOGIC_CMD_START_LEFT || event ==  LOGIC_CMD_START_RIGHT )
      {
-         cmd.opcode = LOGIC_CMD_STOP;
-         
+         cmd.opcode = event;
+         motors_set_callback( motorsdone_callback );
      }
      else
      {
-         cmd.opcode = LOGIC_CMD_START;
-         motors_set_callback( motorsdone_callback );
+         cmd.opcode = LOGIC_CMD_STOP;
      }
     ASSERT( k_msgq_put( &LOCAL_queue, &cmd, K_NO_WAIT ) == 0 );
 }
@@ -206,7 +201,7 @@ static bool motors_send_wait_rotate_cmd(  float angle )
 // #define LOG_DEBUG_PROGRESS { LOG_INF("Logic reached line %d", __LINE__ ); };
 #define LOG_DEBUG_PROGRESS {};
 
-static bool logic_run_loop()
+static bool logic_run_loop( int sign )
 {
     int32_t distance_driven;
     
@@ -216,7 +211,7 @@ static bool logic_run_loop()
     if ( wait_for_motorstermination( MOTOR_CMD_EV_BUMBER, &distance_driven, 1  ) == false )
         return false;
     
-    LOG_INF("Distance for this round seems to be %d", distance_driven );
+    LOG_INF("Distance for this round %d", distance_driven );
 
     if( distance_driven < LOGIC_DISTANCE_BACKUP_CM )
     {
@@ -229,78 +224,41 @@ static bool logic_run_loop()
     if ( motors_send_wait_drive_nob_cmd(  -LOGIC_DISTANCE_BACKUP_CM ) == false )
         return false;
     
-    LOG_DEBUG_PROGRESS;
-    
     // ok backup done, rotate 90 deg
-    if ( motors_send_wait_rotate_cmd(  -LOGIC_ROTATE_ANGLE ) == false )
+    if ( motors_send_wait_rotate_cmd(  -sign*LOGIC_ROTATE_ANGLE ) == false )
         return false;
-    
-    LOG_DEBUG_PROGRESS;
-    
-    // drive little bit forward
-    if ( motors_send_wait_drive_cmd(  LOGIC_DISTANCE_NEXT_LANE_CM ) == false )
-        return false;
-    
-    LOG_DEBUG_PROGRESS;
-    
-    // rotate another deg
-    if ( motors_send_wait_rotate_cmd(  LOGIC_ROTATE_ANGLE ) == false )
-        return false;
-    
-    LOG_DEBUG_PROGRESS;
-    
-    // Make sure the grass is cut at the end
-    motors_send_drive_cmd( MOTOR_CMD_DRIVE, LOGIC_DISTANCE_MAX_MAKE_SURE);
-    
-    if ( wait_for_motorstermination( MOTOR_CMD_EV_BUMBER, NULL, 0 ) == false )
-        return false;
-    
-    LOG_DEBUG_PROGRESS;
-    
-    // ok, bumber hit, then back up
-    if ( motors_send_wait_drive_nob_cmd(  -LOGIC_DISTANCE_BACKUP_CM ) == false )
-        return false;
-
-    LOG_DEBUG_PROGRESS;
-    
-    // Rotate 180
-    if ( motors_send_wait_rotate_cmd(  -2*LOGIC_ROTATE_ANGLE ) == false )
-        return false; 
-    
-    LOG_DEBUG_PROGRESS;
     
     // drive to start position 
     if ( motors_send_wait_drive_cmd(  distance_driven - LOGIC_DISTANCE_BACKUP_CM ) == false )
         return false;
     
-    LOG_DEBUG_PROGRESS;
     
     // ok backup done, rotate 90 deg
-    if ( motors_send_wait_rotate_cmd(  LOGIC_ROTATE_ANGLE ) == false )
+    if ( motors_send_wait_rotate_cmd(  sign*LOGIC_ROTATE_ANGLE ) == false )
         return false;
-    
-    LOG_DEBUG_PROGRESS;
-    
-    // drive little bit forward
-    if ( motors_send_wait_drive_cmd(  LOGIC_DISTANCE_NEXT_LANE_CM ) == false )
-        return false;
-
-    LOG_DEBUG_PROGRESS;
-    
-    // ok backup done, rotate 90 deg
-    if ( motors_send_wait_rotate_cmd(  LOGIC_ROTATE_ANGLE ) == false )
-        return false;
-    
+        
     return true;
     
 }
 
-static void logic_run()
+static void logic_run( bool left)
 {
-    ui_signal_state( UI_STATE_PROGRAM_RUN );
+
+    int rotate_sign = 0;
+    if ( left ) 
+    {
+       ui_signal_state( UI_STATE_PROGRAM_RUN_LEFT );
+       rotate_sign = +1;
+    }
+    else
+    {
+       ui_signal_state( UI_STATE_PROGRAM_RUN_RIGHT );
+       rotate_sign = -1;
+    }
+    
     for( ;; )
     {
-        bool round_ok = logic_run_loop();
+        bool round_ok = logic_run_loop( rotate_sign );
         
         if (round_ok == true)
         {
@@ -336,8 +294,12 @@ static void logic_main()
         switch( cmd->opcode )
         {
             
-            case LOGIC_CMD_START:
-                logic_run();
+            case LOGIC_CMD_START_LEFT:
+                logic_run( false );
+                break;
+                
+            case LOGIC_CMD_START_RIGHT:
+                logic_run( true );
                 break;
                 
             case LOGIC_CMD_STOP:

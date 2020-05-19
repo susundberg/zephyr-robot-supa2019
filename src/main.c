@@ -58,7 +58,7 @@ void supa_fatal_handler( const char* module, int line )
   
 static void ircmd_move( UI_keycode code, bool repeated );
 static void ircmd_function( UI_keycode code, bool repeated );
-static void ircmd_auto_on( UI_keycode code, bool repeated );
+static void ircmd_auto( UI_keycode code, bool repeated );
 static void ircmd_power( UI_keycode code, bool repeated );
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
@@ -87,10 +87,10 @@ void main(void)
     ui_receiver_register( IRKEY_LEFT, ircmd_move);
     ui_receiver_register( IRKEY_RIGHT, ircmd_move );    
     ui_receiver_register( IRKEY_FUNCTION, ircmd_function );
-    ui_receiver_register( IRKEY_AUTO_ON, ircmd_auto_on );
+    ui_receiver_register( IRKEY_AUTO_ON, ircmd_auto );
     ui_receiver_register( IRKEY_POWER, ircmd_power );
 
-    ui_receiver_register( UI_SW_0, ircmd_auto_on );
+    ui_receiver_register( UI_SW_0, ircmd_auto );
     ui_receiver_register( UI_SW_1, ircmd_function );
     
     
@@ -162,9 +162,24 @@ static void ircmd_power( UI_keycode code, bool pressed )
        
 }
 
-static void ircmd_auto_on( UI_keycode code, bool pressed )
+static void ircmd_auto( UI_keycode code, bool pressed )
 {
-    logic_activate( pressed );
+    if ( pressed == false )
+    {
+        logic_send( LOGIC_CMD_STOP );
+        return;
+    }
+        
+    if ( ui_receiver_read( UI_SW_1 ) == false )
+    {
+        LOG_INF("Starting LEFT version of logic");
+       logic_send( LOGIC_CMD_START_LEFT );
+    }
+    else
+    {
+        LOG_INF("Starting RIGHT version of logic");
+        logic_send( LOGIC_CMD_START_RIGHT );
+    }
 }
 
 

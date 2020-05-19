@@ -38,17 +38,20 @@ static const AdcMonitorChannel CONFIG_channels[2] = {
      .adc_channel = DT_IO_CHANNELS_INPUT_BY_NAME( DT_NODELABEL(adc_map),  bvolt )
    },
    
-   // (sensor_ref_mv - meas_mv) / 185mV = A
-   // 1000*(sensor_ref_mv - meas_mv) / 185 = mA
-   // sensor_ref = 2.5v (5V with voltage divide)
+   // Original: (sensor_ref_mv - chip_out_mv) / 185mV = A
+   // Now we have 10k/10k voltage divider:
+   // (sensor_ref_mv - 2*meas_mv) / (185) mV = A
+   
+   // 1000*(sensor_ref_mv - 2*meas_mv) / 185 = mA
+   // sensor_ref = 2.5V -- but fitted to 2700
    // 
-   // B = 2500/185mv * 1000 =  13513
-   // A = -1000/185 * 1000 = 5405
+   // B = (1000*2700)/185 * 1000 = 14594594.5
+   // A = -2000/185 * 1000  = -10810.8
     {
-     .value_min_mv = -200000,   // do not run under 8V
-     .value_max_mv =  200000,  // over 16 -> something wrong!
-     .value_scalar_a_f1000 = 5405, // actually -5.4, lets make it larger.
-     .value_scalar_b_f1000 = 13513,
+     .value_min_mv = -2000,   // do not run under 8V
+     .value_max_mv =  2000,  // over 16 -> something wrong!
+     .value_scalar_a_f1000 = -10811, // actually -5.4, lets make it larger.
+     .value_scalar_b_f1000 = 14594595,
      .value_filtering_f1000 = 900, 
      .adc_channel = DT_IO_CHANNELS_INPUT_BY_NAME( DT_NODELABEL(adc_map),  bmotor_curr ) 
    }
@@ -90,8 +93,11 @@ static s32_t monitor_channel_read( u8_t channel_index )
          ( channel->value_filtering_f1000*LOCAL_adc_value[channel_index] 
          + (1000-channel->value_filtering_f1000)*value_conv 
          + 500 ) / 1000;
-         
-    //LOG_INF("ADC RAW: %d %d %d %d", channel_index, value_new, value_conv, value_filt );
+    
+//     if ( channel_index == 1 )
+//     {
+//        LOG_INF("ADC RAW: %d %d %d %d", channel_index, value_new, value_conv, value_filt );
+//     }
     LOCAL_adc_value[channel_index] = value_filt;
     
     return value_conv;

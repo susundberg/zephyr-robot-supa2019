@@ -4,7 +4,7 @@
 
 
 #define MOTOR_MAX_ACC_CM_SS   20.0f   // cm per sec^2
-#define MOTOR_MAX_SPEED_CM_S  12.0f   // cm per sec
+#define MOTOR_MAX_SPEED_CM_S  15.0f   // cm per sec
 #define MOTOR_MAX_PARAMS      3
 
 

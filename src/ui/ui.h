@@ -22,8 +22,9 @@ typedef enum
 
 typedef enum 
 {
-    UI_STATE_PROGRAM_IDLE = 0x0,
-    UI_STATE_PROGRAM_RUN  = 0x1,
+    UI_STATE_PROGRAM_IDLE      = 0x00,
+    UI_STATE_PROGRAM_RUN_LEFT  = 0x01,
+    UI_STATE_PROGRAM_RUN_RIGHT = 0x02,
     
     UI_STATE_PROGRAM_ERROR_1 = 0x11,
     UI_STATE_PROGRAM_ERROR_2 = 0x12, 
@@ -35,6 +36,7 @@ typedef enum
 typedef void (*UICmd_callback)( UI_keycode code, bool repeated );
 void ui_receiver_register( UI_keycode code, UICmd_callback callback );
 void ui_signal_state( UI_status state );
+bool ui_receiver_read( UI_keycode code );
 
 #define UI_QUEUE_IR_MASK     0x03
 #define UI_QUEUE_IR_1        0x01

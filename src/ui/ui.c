@@ -135,7 +135,21 @@ static void ui_pin_init()
     ui_pin_init_button( &LOCAL_button_dev[1], &LOCAL_button_cb[1], 
                         DT_GPIO_KEYS_BUTTON_SW1_GPIOS_CONTROLLER, DT_GPIO_KEYS_BUTTON_SW1_GPIOS_PIN, DT_GPIO_KEYS_BUTTON_SW1_GPIOS_FLAGS );
 }   
-    
+
+bool ui_receiver_read( UI_keycode code )
+{
+    switch ( code )
+    {
+        case UI_SW_0:
+            return gpio_pin_get( LOCAL_button_dev[0], DT_GPIO_KEYS_BUTTON_SW0_GPIOS_PIN );
+        case UI_SW_1:
+            return gpio_pin_get( LOCAL_button_dev[1], DT_GPIO_KEYS_BUTTON_SW1_GPIOS_PIN );
+        default:
+            FATAL_ERROR("Invalid button asked!")
+    }
+    return false;
+}
+
 static void ui_button_receive( uint8_t code_raw )
 {
     LOG_INF("UI Button pressed: 0x%02X", code_raw );
@@ -182,17 +196,11 @@ static void ui_state_loop()
            value = value & ( LOCAL_loop_led & 0x01 );
        }
    }
-   
    else
-   { // Normal states, 
-       if ( LOCAL_current_state == UI_STATE_PROGRAM_RUN ) 
-       {
-           value = LOCAL_loop_led & 0x01; // blink fast
-       }
-       else
-       {
-           value = LOCAL_loop_led & 0x04; // blink slooow
-       }
+   { // Normal states,
+       
+       uint8_t value_mask = 1 << LOCAL_current_state;
+       value = LOCAL_loop_led & value_mask; // blink fast
    }
   
    

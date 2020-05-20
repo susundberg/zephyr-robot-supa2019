@@ -36,7 +36,7 @@ static Motor_cmd_done_callback LOCAL_motor_callback = NULL;
 
 #define MOTOR_CONTROL_LOOP_MS 10
 static const float MOTOR_CONTROL_LOOP_DT_S = MOTOR_CONTROL_LOOP_MS / 1000.0f;
-#define MOTOR_PWM_SANITY_CHECK_LIMIT 60000
+#define MOTOR_PWM_SANITY_CHECK_LIMIT 6000
 
 static PidController LOCAL_pid[2];
 
@@ -262,21 +262,21 @@ static void motor_cmd_drive( float* distances, float max_speed, bool use_bumbers
         }
         
         motor_timers_get_location( position_cm );
-        int mot_pwm[2];
+        int32_t mot_pwm[2];
         for ( int loop = 0; loop < 2; loop ++ )
         {
-            float position_target_cm   = motor_ramp_location( &LOCAL_target[loop], time_sec );
-            
-            float pwm_out_flt = pid_control_step( &LOCAL_pid[loop], position_target_cm, position_cm[loop], false );
-            
-            int pwm_out = ROUND_INT( pwm_out_flt*100 );
-            
-            if ( ABS(pwm_out) > MOTOR_PWM_SANITY_CHECK_LIMIT ) 
+            float position_target_cm  = motor_ramp_location( &LOCAL_target[loop], time_sec );
+            float position_error_cm = position_target_cm - position_cm[loop];
+            if ( ABS( position_error_cm ) > MOTOR_THRESHOLD_STUCK_CM )
             {
                 end_event = MOTOR_CMD_EV_STUCK;   
-                LOG_ERR("Motor %d pwm invalid %d!", loop, (int)pwm_out );
-                break;                
+                LOG_ERR("Motor %d pos error: %d!", loop, (int)position_error_cm );
+                break;  
             }
+            float pwm_out_flt = pid_control_step( &LOCAL_pid[loop], position_target_cm, position_cm[loop], false );
+            
+            int32_t pwm_out = ROUND_INT( pwm_out_flt*100 );
+ 
  
             mot_pwm[ loop ] = motor_timers_set_speed( loop, pwm_out );
             max_pwm[ loop ] = MAX( max_pwm[loop], mot_pwm[loop] );
@@ -320,8 +320,8 @@ static void motor_cmd_drive( float* distances, float max_speed, bool use_bumbers
     int pos_diff[2] =  { ROUND_INT( (distances[0] - position_cm[0])*100.0f ), 
                          ROUND_INT( (distances[1] - position_cm[1])*100.0f ) };
         
-    LOG_INF("Final position %d %d (mm) - D %d %d (1/10 mm) - max pwm: %d %d", ROUND_INT(position_cm[0]*10.0f), ROUND_INT(position_cm[1]*10.0f),
-                                                  pos_diff[0], pos_diff[1], max_pwm[0], max_pwm[1] ); 
+    LOG_INF("Final position %d %d (mm) - D %d %d (1/10 mm) - max pwm: %d %d", ROUND_INT(position_cm[0]*10.0f),
+            ROUND_INT(position_cm[1]*10.0f), pos_diff[0], pos_diff[1], max_pwm[0], max_pwm[1] ); 
 
     if ( LOCAL_motor_callback != NULL )
     {

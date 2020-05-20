@@ -9,10 +9,11 @@
 
 
 // motor test 1 10 5 -- yielded around 10506 ticks -> 5 rounds - each is 22.62 cm long -> 5*(22.62) / 10506 = 0.0107653 CM / tick
-#define MOTOR_TICKS_TO_CM       0.027451515f
-#define MOTOR_CM_PER_SEC_TO_PWM 25.0f
-#define MOTOR_PWM_OFFSET        150.0f
-#define DRIVE_CM_PER_ANGLE      0.2590545f
+#define MOTOR_TICKS_TO_CM        0.027451515f
+#define MOTOR_CM_PER_SEC_TO_PWM  25.0f
+#define MOTOR_PWM_OFFSET         150.0f
+#define DRIVE_CM_PER_ANGLE       0.2590545f
+#define MOTOR_THRESHOLD_STUCK_CM 5.0f
 
 void motors_init();
 void motors_abort();

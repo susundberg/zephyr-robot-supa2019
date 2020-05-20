@@ -32,6 +32,7 @@ static struct k_msgq LOCAL_queue;
 #define LOGIC_DISTANCE_MAX_MAKE_SURE 40
 #define LOGIC_DISTANCE_NEXT_LANE_CM  10
 #define LOGIC_ROTATE_ANGLE           175
+#define LOGIC_DRIVE_SPEED_CM_S       12.0f   
 
 
 
@@ -153,7 +154,7 @@ static void motors_send_drive_cmd( uint32_t opcode, float distance )
      float params[3];
      params[0] = distance;
      params[1] = distance;
-     params[2] = MOTOR_MAX_SPEED_CM_S;
+     params[2] = LOGIC_DRIVE_SPEED_CM_S;
      
      motors_send_cmd( opcode, params, 3 );
 }
@@ -170,6 +171,7 @@ static bool motors_send_wait_drive_cmd_custom( float distance, float ignore_bumb
     
     motors_send_drive_cmd( opcode, distance );
     
+
     if ( wait_for_motorstermination( MOTOR_CMD_EV_DONE, NULL, 0  ) == false )
         return false;
     

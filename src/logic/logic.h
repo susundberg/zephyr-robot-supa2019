@@ -11,5 +11,4 @@ typedef enum
 } Logic_event_type;
 
 
-
 void logic_send( Logic_event_type event );

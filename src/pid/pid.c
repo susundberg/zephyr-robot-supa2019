@@ -35,6 +35,10 @@ float pid_control_step( PidController* pid, float target, float measured , bool 
    {
       printf("PID  %0.4f   %0.4f %0.4f    %0.4f %0.4f %0.4f\n",  (double)output, (double)target, (double)measured, (double)error, (double)error_d, (double)pid->error_int);
    }
+
+   if ( output > 32000.0f )
+      output = 32000.0f;
+      
    return output;
 }
 

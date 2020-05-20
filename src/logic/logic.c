@@ -306,6 +306,7 @@ static void logic_main()
                 
             case LOGIC_CMD_STOP:
                 LOG_INF("Ignore stop as not running.");
+                ui_signal_state( UI_STATE_PROGRAM_IDLE );
                 break;
                 
             default:

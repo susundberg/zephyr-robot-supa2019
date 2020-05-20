@@ -30,9 +30,9 @@ static struct k_msgq LOCAL_queue;
 #define LOGIC_DISTANCE_MAX_CM        1000    // 10m should be enough for everyone..
 #define LOGIC_DISTANCE_BACKUP_CM     20
 #define LOGIC_DISTANCE_MAX_MAKE_SURE 40
-#define LOGIC_DISTANCE_NEXT_LANE_CM  10
 #define LOGIC_ROTATE_ANGLE           175
-#define LOGIC_DRIVE_SPEED_CM_S       12.0f   
+#define LOGIC_DRIVE_SPEED_CM_S       12.0f
+#define LOGIC_DISTANCE_STUCK_DRIVE_CM 10.0f   
 
 
 
@@ -118,24 +118,30 @@ static void set_ui_termination_reason(uint32_t event )
 
 
 
-static bool wait_for_motorstermination( uint32_t wait_event, int32_t* params, int32_t params_n )
+static int32_t wait_for_motorstermination( uint32_t wait_event, int32_t* params, int32_t params_n )
 {
     const Logic_event* event = logic_queue_get( K_FOREVER  );
     
     if ( event->opcode == LOGIC_EVENT_MOTOR )
     {
         LOG_INF("Logic received motop %d / %d", event->opcode, event->params[0] );
+        
+        if ( params_n > 0 )
+           memcpy( params, &(event->params[1]), params_n*sizeof(uint32_t));
+        
         if ( event->params[0] == wait_event )
         {
-            if ( params_n > 0 )
-                memcpy( params, &(event->params[1]), params_n*sizeof(uint32_t));
-            
-            return true;
+            return 0;
+        }
+        else if ( event->params[0] == MOTOR_CMD_EV_STUCK )
+        {
+            return 1;
         }
         else
         {
             LOG_INF("Was waiting for opcode %d, bailing out!", wait_event );
             set_ui_termination_reason( event->params[0] );
+            return -1;
         }
     }
     else
@@ -145,7 +151,7 @@ static bool wait_for_motorstermination( uint32_t wait_event, int32_t* params, in
     }
 
     LOG_INF("Invalid opcode or event, exit!");
-    return false;
+    return -1;
     
 }
 
@@ -159,33 +165,85 @@ static void motors_send_drive_cmd( uint32_t opcode, float distance )
      motors_send_cmd( opcode, params, 3 );
 }
 
+static bool motors_try_clear_stuck()
+{
+    LOG_INF("Trying to clear stuck, reverse!");
+    motors_send_drive_cmd( MOTOR_CMD_DRIVE_IGN_BUMBER, -LOGIC_DISTANCE_STUCK_DRIVE_CM );
+
+    if ( wait_for_motorstermination( MOTOR_CMD_EV_DONE, NULL, 0 ) != 0 )
+        return false;
 
 
+    motors_send_drive_cmd( MOTOR_CMD_DRIVE_IGN_BUMBER, LOGIC_DISTANCE_STUCK_DRIVE_CM );
 
-static bool motors_send_wait_drive_cmd_custom( float distance, float ignore_bumber )
+    if ( wait_for_motorstermination( MOTOR_CMD_EV_DONE, NULL, 0 ) != 0 )
+        return false;
+
+    return true;
+}
+
+
+static bool motors_send_wait_drive_cmd_custom( float distance, float ignore_bumber, uint32_t wait_event, int32_t* distance_driven )
 {
     uint32_t opcode = MOTOR_CMD_DRIVE;
     
     if ( ignore_bumber )
         opcode = MOTOR_CMD_DRIVE_IGN_BUMBER;
     
-    motors_send_drive_cmd( opcode, distance );
-    
+    ASSERT(distance_driven != NULL );
 
-    if ( wait_for_motorstermination( MOTOR_CMD_EV_DONE, NULL, 0  ) == false )
-        return false;
     
-    return true;
+    for ( int retries = 0; retries < 3; retries ++ )
+    {
+       motors_send_drive_cmd( opcode, distance );
+       int32_t distance_driven_now = 0;
+       
+       int32_t ret = wait_for_motorstermination( wait_event, &distance_driven_now, 1  );
+       *distance_driven += distance_driven_now;
+       
+       if ( ret == 1 ) // we got stuck!
+       {
+           if ( distance_driven_now >= distance )
+           {
+               LOG_INF("We are there, accept the facts.");
+               return true;
+           }
+           
+           // Ok not there, try to clear this situation
+           if ( motors_try_clear_stuck() == false )
+           {
+               LOG_INF("Clearing stuck failed, bailing out!");
+               return false;
+           }
+           // clearing succeeded, lets reduce to travel and try again
+           distance = distance - distance_driven_now;
+           LOG_INF("Retry drive to distance %d", (int)distance );
+           continue;
+       }
+       else if ( ret == 0 )
+       {
+           return true;
+       }
+       else
+       {   
+           return false;
+       }
+    }
+    
+    LOG_INF("Stuck too many times, bailing out!");
+    return false;
 }
 
 static bool motors_send_wait_drive_cmd( float distance )
 {
-    return motors_send_wait_drive_cmd_custom( distance, false );
+    int32_t tmp = 0;
+    return motors_send_wait_drive_cmd_custom( distance, false, MOTOR_CMD_EV_DONE, &tmp );
 }
 
 static bool motors_send_wait_drive_nob_cmd( float distance )
 {
-    return motors_send_wait_drive_cmd_custom( distance, true );
+    int32_t tmp = 0;
+    return motors_send_wait_drive_cmd_custom( distance, true, MOTOR_CMD_EV_DONE, &tmp );
 }
 
 
@@ -194,7 +252,7 @@ static bool motors_send_wait_rotate_cmd(  float angle )
 {
      motors_send_cmd( MOTOR_CMD_ROTATE, &angle, 1 );
      
-    if ( wait_for_motorstermination( MOTOR_CMD_EV_DONE, NULL, 0  ) == false )
+    if ( wait_for_motorstermination( MOTOR_CMD_EV_DONE, NULL, 0  ) != 0 )
         return false;
     
     return true;
@@ -208,9 +266,7 @@ static bool logic_run_loop( int sign )
     int32_t distance_driven;
     
     // Ok, first we start going as far as possible
-    motors_send_drive_cmd( MOTOR_CMD_DRIVE, LOGIC_DISTANCE_MAX_CM );
-   
-    if ( wait_for_motorstermination( MOTOR_CMD_EV_BUMBER, &distance_driven, 1  ) == false )
+    if ( motors_send_wait_drive_cmd_custom( LOGIC_DISTANCE_MAX_CM, false, MOTOR_CMD_EV_BUMBER, &distance_driven ) == false )
         return false;
     
     LOG_INF("Distance for this round %d", distance_driven );

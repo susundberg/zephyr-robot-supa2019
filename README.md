@@ -67,8 +67,3 @@ Robotdyn shield: https://robotdyn.com/motor-shield-2a-l298p-2-motors-for-arduino
 | Force stop      | 1  | 1  |  1   |
 | Free roll       | 0  | 0  |  0   |
 
-
-
-
-## HW Modifications for the STM32F411E-DISCO
-* PE0 INT cutted away from the Gyro (as its required for TIM4 external clock - HAL input )

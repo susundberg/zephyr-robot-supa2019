@@ -1,11 +1,12 @@
 #include <drivers/gpio.h>
+#include <devicetree.h>
+
 
 #define SUPA_MODULE "mob"
 #include "../main.h"
 #include "./motors.h"
 
 LOG_MODULE_REGISTER(motor_bum);
-
 
 #define BUMBER_INPUT_FLAGS ( GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE | GPIO_INT_ACTIVE_LOW )
 

@@ -2,6 +2,7 @@
 
 
 #include <drivers/gpio.h>
+#include <devicetree.h>
 
 #define SUPA_MODULE "uim"
 

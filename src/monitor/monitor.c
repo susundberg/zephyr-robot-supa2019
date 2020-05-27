@@ -1,7 +1,7 @@
 #include <zephyr.h>
 #include <logging/log.h>
 #include <drivers/adc.h>
-
+#include <devicetree.h>
 
 #define SUPA_MODULE "mon"
 LOG_MODULE_REGISTER(monitor);

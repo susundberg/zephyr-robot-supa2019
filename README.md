@@ -70,5 +70,13 @@ Robotdyn shield: https://robotdyn.com/motor-shield-2a-l298p-2-motors-for-arduino
 
 
 
-## HW Modifications for the STM32F411E-DISCO
-* PE0 INT cutted away from the Gyro (as its required for TIM4 external clock - HAL input )
+## Would next time do differently:
+
+1. Make proto PCB rather than wire mess. Even better, plan and order PCB.
+1. Add reset to Bluetooth HC-05 - it seems to buffer some shit from zephyr.
+1. Add external reset to other chips?
+1. While blingking leds are great, they provide quite little information. Uart over bluetooth is good, not great. Super project would have android app that would be able to show some specific values -- for example uart lines in format of: DATA:<name>:value;
+
+
+
+

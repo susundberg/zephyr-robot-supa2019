@@ -11,3 +11,4 @@ file(GLOB_RECURSE app_sources "src/*.c" )
 file(GLOB_RECURSE app_sources_cpp "src/*.cpp" )
 
 target_sources(app PRIVATE ${app_sources} ${app_sources_cpp})
+

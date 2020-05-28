@@ -164,7 +164,7 @@ void monitor_update()
     }
     loop++;
     
-    if (( loop & 0b111) == 0 )
+    if (( loop & 0b1111) == 0 )
     {
        LOG_INF("Adc monitor values %d %d",  LOCAL_adc_value[0], LOCAL_adc_value[1] );
     }

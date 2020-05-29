@@ -181,6 +181,7 @@ static bool motors_send_wait_drive_cmd_custom(float distance, float ignore_bumbe
             {
 
                 LOG_INF("Stuck too many times, bailing out!");
+                set_ui_termination_reason( MOTOR_CMD_EV_STUCK );
                 return false;
             }
             if (distance_driven_now + MOTOR_THRESHOLD_STUCK_CM >= distance)
@@ -193,6 +194,7 @@ static bool motors_send_wait_drive_cmd_custom(float distance, float ignore_bumbe
             if (motors_try_clear_stuck() == false)
             {
                 LOG_INF("Clearing stuck failed, bailing out!");
+                set_ui_termination_reason( MOTOR_CMD_EV_STUCK );
                 return false;
             }
             // clearing succeeded, lets reduce to travel and try again
@@ -305,10 +307,6 @@ static void logic_run(bool left)
         }
         break;
     }
-    motors_send_drive_cmd(MOTOR_CMD_DRIVE_IGN_BUMBER, LOGIC_DISTANCE_STUCK_DRIVE_CM);
-
-    if (wait_for_motorstermination(MOTOR_CMD_EV_DONE, NULL, 0) != 0)
-        return false;
 
     LOG_INF("Rounds done, bailing out!");
     motors_set_callback(NULL);

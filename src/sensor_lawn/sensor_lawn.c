@@ -5,6 +5,7 @@
 #define SUPA_MODULE "sla"
 #include "../main.h"
 #include "sensor_lawn.h"
+#include "../utils/change_filter.h"
 
 LOG_MODULE_REGISTER(SLA);
 
@@ -21,8 +22,10 @@ LOG_MODULE_REGISTER(SLA);
 		get_and_check(dev, DT_GPIO_##name##_GPIOS_CONTROLLER, DT_GPIO_##name##_GPIOS_PIN, flags); \
 	}
 
-static struct device *dev_cap_in;
+static struct device *LOCAL_dev_capin;
+static struct device *LOCAL_dev_capout;
 
+static ChangeFilter LOCAL_changle_filter = { .value_th = 10 };
 static struct k_msgq LOCAL_queue;
 static u32_t LOCAL_queue_buffer[LOCAL_queue_n];
 
@@ -63,103 +66,109 @@ void get_and_check(struct device **dev, const char *label, u32_t pin, uint32_t f
 	}
 }
 
+static u32_t read_single_value()
+{
+	// Empty charge
+	gpio_pin_set(LOCAL_dev_capout, GPIO_PIN(LEDS_CAP_OUT), 0);
+	gpio_pin_set(LOCAL_dev_capin, GPIO_PIN(KEYS_CAP_IN), 0);
+	k_msgq_purge(&LOCAL_queue);
+	k_msleep(SENSOR_LAWN_SAMPLE_WAIT_MS);
+
+	// uint32_t pin_value = gpio_pin_get(LOCAL_dev_capin, GPIO_PIN(KEYS_CAP_IN));
+
+	// if (pin_value != 0)
+	// {
+	// 	LOG_WRN("Pin value is still %d, retry", pin_value);
+	// 	continue;
+	// }
+
+	// Start charge
+	gpio_pin_set(LOCAL_dev_capin, GPIO_PIN(KEYS_CAP_IN), 1);
+	u32_t start_time = k_cycle_get_32();
+
+	gpio_pin_set(LOCAL_dev_capout, GPIO_PIN(LEDS_CAP_OUT), 1);
+
+	u32_t end_time = 0;
+	int32_t ret = k_msgq_get(&LOCAL_queue, &end_time, K_MSEC(SENSOR_LAWN_SAMPLE_MAX_LOAD_MS));
+	gpio_pin_set(LOCAL_dev_capout, GPIO_PIN(LEDS_CAP_OUT), 0);
+	gpio_pin_set(LOCAL_dev_capin, GPIO_PIN(KEYS_CAP_IN), 0);
+
+	if (ret == 0)
+	{
+		// Got new message
+		if (end_time <= start_time)
+		{
+			LOG_INF("Overflow!");
+			return 0;
+		}
+
+		u32_t dtime = (u32_t)(k_cyc_to_ns_floor64(end_time - start_time));
+		dtime = dtime / 1000;
+		return dtime;
+	}
+	else
+	{
+		LOG_INF("Did not observe signal!");
+		return 0;
+	}
+}
+
+static u32_t read_sensor_value()
+{
+	u32_t value_min = 1 << 30;
+	u32_t value_max = 0;
+	for ( s32_t loop = 0; loop < SENSOR_LAWN_SAMPLE_N ; loop ++ )
+	{
+		u32_t value = read_single_value();
+
+		if (value == 0)
+			continue;
+
+		value_min = MIN( value_min, value );
+		value_max = MAX( value_max, value );
+		
+	}
+	if ( value_min > value_max )
+	{
+		FATAL_ERROR("Lawn sensor is not working!");
+		return 0;
+	}
+	return (value_max);
+}
+
 static void sensor_lawn_main(void)
 {
 	LOG_INF("Thread started!");
 
-	struct device *dev_cap_out;
-
-	GPIO_CONFIGURE(&dev_cap_out, LEDS_CAP_OUT, GPIO_OUTPUT_ACTIVE | GPIO_ACTIVE_HIGH | GPIO_OUTPUT);
-	GPIO_CONFIGURE(&dev_cap_in, KEYS_CAP_IN, GPIO_INPUT | GPIO_ACTIVE_HIGH | GPIO_OUTPUT | GPIO_OPEN_DRAIN);
+	GPIO_CONFIGURE(&LOCAL_dev_capout, LEDS_CAP_OUT, GPIO_OUTPUT_ACTIVE | GPIO_ACTIVE_HIGH | GPIO_OUTPUT);
+	GPIO_CONFIGURE(&LOCAL_dev_capin, KEYS_CAP_IN, GPIO_INPUT | GPIO_ACTIVE_HIGH | GPIO_OUTPUT | GPIO_OPEN_DRAIN);
 
 	k_msgq_init(&LOCAL_queue, (char *)LOCAL_queue_buffer, 4, LOCAL_queue_n);
 
 	gpio_init_callback(&LOCAL_ISR_signal, signal_isr, BIT(GPIO_PIN(KEYS_CAP_IN)));
-	RET_CHECK(gpio_add_callback(dev_cap_in, &LOCAL_ISR_signal));
-	RET_CHECK(gpio_pin_interrupt_configure(dev_cap_in, GPIO_PIN(KEYS_CAP_IN), GPIO_INT_EDGE_RISING));
+	RET_CHECK(gpio_add_callback(LOCAL_dev_capin, &LOCAL_ISR_signal));
+	RET_CHECK(gpio_pin_interrupt_configure(LOCAL_dev_capin, GPIO_PIN(KEYS_CAP_IN), GPIO_INT_EDGE_RISING));
 
-	//	GPIO_CONFIGURE(&dev_cap_in, KEYS_CAP_IN ,  GPIO_ACTIVE_HIGH| GPIO_OUTPUT  );
 
-	u32_t mainloop = 0;
+	u32_t value_filt = read_sensor_value();
 
-	//	u32_t data[SENSOR_LAWN_SAMPLE_N] = {0};
-	u32_t val_avg = 0;
-	u32_t val_min = 1 << 30;
-	u32_t val_max = 0;
-	u32_t val_filt = SENSOW_LAWN_EXPECTED_VALUE;
+	
+
 	for (;;)
 	{
-		// Empty charge
-		gpio_pin_set(dev_cap_out, GPIO_PIN(LEDS_CAP_OUT), 0);
-		gpio_pin_set(dev_cap_in, GPIO_PIN(KEYS_CAP_IN), 0);
-		k_msgq_purge(&LOCAL_queue);
-		k_msleep(SENSOR_LAWN_SAMPLE_WAIT_MS);
+		u32_t value = read_sensor_value();
 
-		// uint32_t pin_value = gpio_pin_get(dev_cap_in, GPIO_PIN(KEYS_CAP_IN));
+		value_filt = (900*value_filt + value*100) / 1000;
+		// LOG_INF("Got %d %d", value, value_filt );
 
-		// if (pin_value != 0)
-		// {
-		// 	LOG_WRN("Pin value is still %d, retry", pin_value);
-		// 	continue;
-		// }
-
-		// Start charge
-		gpio_pin_set(dev_cap_in, GPIO_PIN(KEYS_CAP_IN), 1);
-		u32_t start_time = k_cycle_get_32();
-
-		gpio_pin_set(dev_cap_out, GPIO_PIN(LEDS_CAP_OUT), 1);
-
-		u32_t end_time = 0;
-		int32_t ret = k_msgq_get(&LOCAL_queue, &end_time, K_MSEC(SENSOR_LAWN_SAMPLE_MAX_LOAD_MS));
-		gpio_pin_set(dev_cap_out, GPIO_PIN(LEDS_CAP_OUT), 0);
-		gpio_pin_set(dev_cap_in, GPIO_PIN(KEYS_CAP_IN), 0);
-
-		if (ret == 0)
+		if ( change_filtered( value_filt, &LOCAL_changle_filter ) )
 		{
-			// Got new message
-			if (end_time <= start_time)
-			{
-				LOG_INF("Overflow!");
-				continue;
-			}
-
-			u32_t dtime = (u32_t)(k_cyc_to_ns_floor64(end_time - start_time));
-			dtime = dtime / 1000;
-
-			val_avg += (dtime);
-			//printk("%02d ", data[loop] / 1000);
-			val_min = MIN(dtime, val_min);
-			val_max = MAX(dtime, val_max);
-
-			mainloop += 1;
-		}
-		else
-		{
-			LOG_INF("Did not observe signal!");
-			continue;
+			LOG_INF("Lawn sensor: %d", value_filt );
 		}
 
-		if (mainloop >= SENSOR_LAWN_SAMPLE_N)
-		{
-
-			mainloop = 0;
-
-			u32_t vavg = (val_avg / SENSOR_LAWN_SAMPLE_N);
-			u32_t val_range  = val_max - val_min;
-			val_filt = (900*val_filt + 100*val_range) / 1000;
-			LOG_INF("Values: filt: %d - avg: %d min: %d max:%d r:%d", val_filt, vavg, val_min, val_max, val_range);
-
-			k_msleep(SENSOR_LAWN_WAIT_BETWEEN_MS);
-
-			
-
-			val_avg = 0;
-			val_min = 1 << 30;
-			val_max = 0;
-
-			LOCAL_edges = 0;
-		}
+		k_msleep(SENSOR_LAWN_WAIT_BETWEEN_MS);
 	}
+
 }
 
 K_THREAD_DEFINE(sensor_lawn, 1024, sensor_lawn_main, NULL, NULL, NULL,

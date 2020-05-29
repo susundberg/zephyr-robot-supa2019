@@ -76,6 +76,8 @@ Robotdyn shield: https://robotdyn.com/motor-shield-2a-l298p-2-motors-for-arduino
 1. Add reset to Bluetooth HC-05 - it seems to buffer some shit from zephyr.
 1. Add external reset to other chips?
 1. While blingking leds are great, they provide quite little information. Uart over bluetooth is good, not great. Super project would have android app that would be able to show some specific values -- for example uart lines in format of: DATA:<name>:value;
+1. If using STM32 boards, the Nucleo boards are cheap and contain programmer. The STM32 blue pill is cheap, works, but the reset is not working well. Booting to stm32 bootloader with program makes it work (but it does not work if cpu is messed up).
+
 
 
 

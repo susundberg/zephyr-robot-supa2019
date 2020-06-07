@@ -68,6 +68,12 @@ Robotdyn shield: https://robotdyn.com/motor-shield-2a-l298p-2-motors-for-arduino
 | Free roll       | 0  | 0  |  0   |
 
 
+## Program cable in MK1
+
+In programmer side:
+* Yellow
+* Orange
+* Green (GND)
 
 
 ## Would next time do differently:

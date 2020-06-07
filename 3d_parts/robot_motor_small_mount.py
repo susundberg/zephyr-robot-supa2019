@@ -1,56 +1,69 @@
 
 import supalib
 
-EPS = 0.01
-TOLE = 0.1
-BASE_PLATE_INNER_XSIZE = 33 + 2*8
-BASE_PLATE_INNER_YSIZE = 26
-BASE_PLATE_INNER_ZSIZE = 32.0
-BASE_PLATE_THICK = 5
-NORMAL_THICK = 3
+EPS = 0.001
+TOLE = 0.2
+
+THICK = 3
+VERSION = 3
 
 
-
-
-main_plate_side_xy  = supalib.create_box( size=(BASE_PLATE_INNER_XSIZE + EPS, BASE_PLATE_INNER_YSIZE + EPS, BASE_PLATE_THICK ) , place=(0,0,0)  )
-main_plate_side_xz  = supalib.create_box( size=(BASE_PLATE_INNER_XSIZE + EPS, NORMAL_THICK, BASE_PLATE_INNER_ZSIZE + BASE_PLATE_THICK), place=(0, BASE_PLATE_INNER_YSIZE, 0) )
-main_plate_side_yz  = supalib.create_box( size=(NORMAL_THICK, BASE_PLATE_INNER_YSIZE + NORMAL_THICK, BASE_PLATE_INNER_ZSIZE + BASE_PLATE_THICK), place=(BASE_PLATE_INNER_XSIZE, 0 , 0) )
-
-cyls = []
-HOLE_Z_SIZE = 9
-HOLE_X_SIZE = 33/2.0
-HOLE_X_OFFSET = BASE_PLATE_INNER_XSIZE*0.5 - 1.0 # The -1 is for tolerance
-HOLE_Z_OFFSET = BASE_PLATE_THICK + (BASE_PLATE_INNER_ZSIZE )*0.5
-for xloop in [-1,+1]:
-    for yloop in [-1,+1]:
-       cyl = supalib.create_cyl( place=(HOLE_X_OFFSET + xloop*HOLE_X_SIZE,BASE_PLATE_INNER_YSIZE - 1.0 ,yloop*HOLE_Z_SIZE + HOLE_Z_OFFSET ), rotate=(1,0,0,-90), radius = 1.5 + TOLE/2.0 , size_z = 20.0 )
-       cyls.append(cyl)
-cyls.append( supalib.create_cyl( place=(HOLE_X_OFFSET + HOLE_X_SIZE - 9.0 ,BASE_PLATE_INNER_YSIZE - 1.0 , HOLE_Z_OFFSET ), rotate=(1,0,0,-90), radius = 3.5, size_z = 20.0 ) )
-
+def motor_model():
     
-cyls = supalib.create_union( cyls )
-main_plate_side_xz = supalib.create_cut( main_plate_side_xz, cyls ) 
+    rad_large = (37+2*TOLE)*0.5
+    rad_small = (35+2*TOLE)*0.5
+    len_both  = 27
+    len_output = 30
+    bolt_offset = 31/2
+    shaft_rad = (12+2*TOLE)*0.5
+    bolt_rad  = (4.4)*0.5
 
-MOUNT_BOLT_RAD = 4
-MOUNT_BOLT_DEPT = 3
-
-MOUNT_Z_OFFSET = BASE_PLATE_THICK + EPS
-MOUNT_X_OFFSET = BASE_PLATE_INNER_XSIZE*0.5
-MOUNT_Y_OFFSET = BASE_PLATE_INNER_YSIZE*0.5
-MOUNT_X_SIZE   = BASE_PLATE_INNER_XSIZE*0.5 - MOUNT_BOLT_RAD - 2.0
-MOUNT_Y_SIZE   = BASE_PLATE_INNER_YSIZE*0.5 - MOUNT_BOLT_RAD - 2.0
-bolts = []
-for xloop in [-1,+1]:
-    for yloop in [-1,+1]:
-        bolt = supalib.create_bolt( radius_large=MOUNT_BOLT_RAD, radius_small=2.0, size_z_large=MOUNT_BOLT_DEPT, size_z_small=4, rotate=(1,0,0,180), place=( MOUNT_X_OFFSET + xloop*MOUNT_X_SIZE,  MOUNT_Y_OFFSET + yloop*MOUNT_Y_SIZE, MOUNT_Z_OFFSET ) )
-        bolts.append( bolt )
-                                
-bolts = supalib.create_union( bolts )
-main_plate_side_xy = supalib.create_cut( main_plate_side_xy, bolts) 
+    c1 = supalib.create_cyl( radius=rad_large, size_z=len_both, place=(rad_large,0,0) )
+    c2 = supalib.create_cyl( radius=rad_small, size_z=len_both, place=(rad_large,0,len_both - EPS) )
+    c3 = supalib.create_cyl( radius=shaft_rad, size_z=len_output, place=(11.5, 0, -len_output + EPS ) )
+    c4 = supalib.create_cyl( radius=bolt_rad, size_z=len_output, place=(18.4, -bolt_offset, -len_output + EPS ) )
+    c5 = supalib.create_cyl( radius=bolt_rad, size_z=len_output, place=(18.4, +bolt_offset, -len_output + EPS ) )
+    return supalib.create_union( (c1,c2,c3,c4,c5) )
 
 
-part = supalib.create_union( [ main_plate_side_xy, main_plate_side_xz, main_plate_side_yz ] )
+motor = motor_model()
+fp_sx = 37 + 2*THICK
+front_plate = supalib.create_box( ( fp_sx, fp_sx, THICK), place=( -THICK, -fp_sx*0.5, -THICK + 0.4 ) )
+front_plate = supalib.create_cut( front_plate, motor )
+
+#supalib.finish()
+
+#front_plate.Label="robot_motor_fp"
+#mesh = supalib.creta_mesh_from( front_plate, save_to="/home/pauli/", version=VERSION )
 
 
+supalib.finish()
 
 
+ms_y = 37 + 2*THICK 
+ms_z = 27*2 
+main_mount = supalib.create_box( (15, ms_y, ms_z), place=(0, -ms_y*0.5, -THICK + 0.4 - EPS ) )
+
+sides=10
+fs_z=ms_z
+fs_y = ms_y + 2*sides
+low_mount = supalib.create_box( (THICK, fs_y, fs_z), place=(-THICK, -fs_y*0.5, -THICK + 0.4 - EPS ) )
+
+holes = []
+hl_y = 0.5*(ms_y + sides)
+
+for loopz in [-1,1]:
+    for loopy in [-1,1]:
+        c = supalib.create_cyl( radius=2.2, size_z = 4*THICK )
+        c = supalib.relocate( c, place=( -2*THICK, loopy*hl_y, loopz*20 + 25 ), rotate=(0,1,0,90) )
+        holes.append(c)
+holes = supalib.create_union( holes )
+low_mount = supalib.create_cut( low_mount, holes )
+mounts = supalib.create_union( ( main_mount, low_mount ) )
+mounts = supalib.create_cut( mounts, motor )
+
+mount = supalib.create_union( (mounts, front_plate ) )
+mount.Label="robot_motor_smallv2_mount"
+mesh = supalib.creta_mesh_from( mount, save_to="/home/pauli/", version=VERSION )
+
+supalib.finish()

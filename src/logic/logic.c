@@ -153,7 +153,6 @@ static bool motors_try_clear_stuck()
 
     if (wait_for_motorstermination(MOTOR_CMD_EV_DONE, NULL, 0) != 0)
         return false;
-
     return true;
 }
 

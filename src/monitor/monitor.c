@@ -4,16 +4,20 @@
 #include <devicetree.h>
 
 #define SUPA_MODULE "mon"
-LOG_MODULE_REGISTER(monitor);
-
-#include "../main.h"
 #include "monitor.h"
+#include "../main.h"
+#include "../utils/change_filter.h"
 
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
 #define ADC_REFERENCE		ADC_REF_INTERNAL
 #define VOLTAGE_REFERENCE_MV    3300
+
+
+
+LOG_MODULE_REGISTER(monitor);
+
 
 static struct device* LOCAL_adc_dev;
 
@@ -59,6 +63,10 @@ static const AdcMonitorChannel CONFIG_channels[2] = {
 
 #define ADC_CHANNEL_N  (sizeof(CONFIG_channels)/sizeof(AdcMonitorChannel))
 static s32_t LOCAL_adc_value[ADC_CHANNEL_N];
+static ChangeFilter LOCAL_adc_filter[ADC_CHANNEL_N] = {
+ {.value_th = 1000 },
+  {.value_th = 200 },
+};
 
 
 
@@ -76,7 +84,7 @@ static void read_one_channel(u8_t channel_id, s32_t* value_mv )
 
     RET_CHECK( adc_read(LOCAL_adc_dev, &sequence) );
     *value_mv = value_raw;
-    RET_CHECK( adc_raw_to_millivolts( VOLTAGE_REFERENCE_MV, ADC_GAIN, ADC_RESOLUTION, value_mv ) )
+    RET_CHECK( adc_raw_to_millivolts( VOLTAGE_REFERENCE_MV, ADC_GAIN, ADC_RESOLUTION, value_mv ) );
 }
 
 static s32_t monitor_channel_read( u8_t channel_index )
@@ -153,21 +161,18 @@ void monitor_init()
 
 
 
-
 void monitor_update()
 {
-    static u8_t loop = 0 ;
+    
     for ( int loop = 0; loop < ADC_CHANNEL_N; loop ++ )
     {
         monitor_channel( loop );
-        
+        if ( change_filtered( LOCAL_adc_value[loop], &LOCAL_adc_filter[loop] ) )
+        {
+             LOG_INF("Adc %d monitor value changed: %d",  loop, LOCAL_adc_value[loop] ); 
+        }
     }
-    loop++;
-    
-    if (( loop & 0b111) == 0 )
-    {
-       LOG_INF("Adc monitor values %d %d",  LOCAL_adc_value[0], LOCAL_adc_value[1] );
-    }
+
 }
 
 

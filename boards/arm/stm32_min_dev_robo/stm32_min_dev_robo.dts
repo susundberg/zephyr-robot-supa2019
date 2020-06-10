@@ -23,8 +23,6 @@
 		};		
 	};
 	
-	
-	
 	buttons {
 		compatible = "gpio-keys";
 		button_sw0 {
@@ -85,7 +83,22 @@
 		};
 	};
 	
-	
+	cap-gpio-out {
+			compatible = "gpio-leds";
+			cap-out {
+					gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+					label = "cap-output";
+			};
+	};
+	cap-gpio-in
+	{
+		compatible =  "gpio-keys";
+		cap-in {
+			gpios = <&gpiob 10 GPIO_ACTIVE_HIGH >;
+			label = "cap-input";
+		};
+}; 
+		
 
 };
 

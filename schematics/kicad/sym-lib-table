@@ -1,0 +1,4 @@
+(sym_lib_table
+  (lib (name SUPALIB)(type Legacy)(uri /home/pauli/TEST/SUPALIB.lib)(options "")(descr ""))
+  (lib (name china_bluepill)(type Legacy)(uri ${KIPRJMOD}/china_bluepill.lib)(options "")(descr ""))
+)

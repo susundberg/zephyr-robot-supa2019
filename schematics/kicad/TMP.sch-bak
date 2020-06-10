@@ -1,0 +1,214 @@
+EESchema Schematic File Version 4
+EELAYER 30 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 2 2
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L Regulator_Linear:LD1117S33TR_SOT223 U?
+U 1 1 5E8DB926
+P 7350 3200
+AR Path="/5E8DB926" Ref="U?"  Part="1" 
+AR Path="/5E8D8C47/5E8DB926" Ref="U4"  Part="1" 
+F 0 "U4" H 7350 3442 50  0000 C CNN
+F 1 "LD1117S33TR" H 7350 3351 50  0000 C CNN
+F 2 "Package_TO_SOT_THT:TO-220-3_Vertical" H 7350 3400 50  0001 C CNN
+F 3 "http://www.st.com/st-web-ui/static/active/en/resource/technical/document/datasheet/CD00000544.pdf" H 7450 2950 50  0001 C CNN
+	1    7350 3200
+	1    0    0    -1  
+$EndComp
+$Comp
+L SUPALIB:LM2596_DC_DC_BUCK_MODULE U?
+U 1 1 5E8DB92C
+P 5650 2450
+AR Path="/5E8DB92C" Ref="U?"  Part="1" 
+AR Path="/5E8D8C47/5E8DB92C" Ref="U3"  Part="1" 
+F 0 "U3" H 5775 2965 50  0000 C CNN
+F 1 "LM2596_DC_DC_BUCK_MODULE" H 5775 2874 50  0000 C CNN
+F 2 "SUPALIB:LM2596_DC_DC_BUCK_MODULE" H 5775 2783 50  0000 C CNN
+F 3 "" H 5700 2550 50  0001 C CNN
+	1    5650 2450
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5E8DB932
+P 6600 2700
+AR Path="/5E8DB932" Ref="#PWR?"  Part="1" 
+AR Path="/5E8D8C47/5E8DB932" Ref="#PWR010"  Part="1" 
+F 0 "#PWR010" H 6600 2450 50  0001 C CNN
+F 1 "GND" H 6605 2527 50  0000 C CNN
+F 2 "" H 6600 2700 50  0001 C CNN
+F 3 "" H 6600 2700 50  0001 C CNN
+	1    6600 2700
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	7050 3200 7050 3000
+Wire Wire Line
+	4900 2700 4750 2700
+Wire Wire Line
+	4750 2700 4750 3500
+Wire Wire Line
+	4750 3500 6750 3500
+Wire Wire Line
+	6600 2250 7050 2250
+$Comp
+L power:+5V #PWR?
+U 1 1 5E8DB93D
+P 7050 2050
+AR Path="/5E8DB93D" Ref="#PWR?"  Part="1" 
+AR Path="/5E8D8C47/5E8DB93D" Ref="#PWR011"  Part="1" 
+F 0 "#PWR011" H 7050 1900 50  0001 C CNN
+F 1 "+5V" H 7065 2223 50  0000 C CNN
+F 2 "" H 7050 2050 50  0001 C CNN
+F 3 "" H 7050 2050 50  0001 C CNN
+	1    7050 2050
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	7050 2050 7050 2250
+Connection ~ 7050 2250
+$Comp
+L power:+3.3V #PWR?
+U 1 1 5E8DB946
+P 8500 3200
+AR Path="/5E8DB946" Ref="#PWR?"  Part="1" 
+AR Path="/5E8D8C47/5E8DB946" Ref="#PWR012"  Part="1" 
+F 0 "#PWR012" H 8500 3050 50  0001 C CNN
+F 1 "+3.3V" H 8515 3373 50  0000 C CNN
+F 2 "" H 8500 3200 50  0001 C CNN
+F 3 "" H 8500 3200 50  0001 C CNN
+	1    8500 3200
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+12V #PWR?
+U 1 1 5E8DB94C
+P 4550 2250
+AR Path="/5E8DB94C" Ref="#PWR?"  Part="1" 
+AR Path="/5E8D8C47/5E8DB94C" Ref="#PWR09"  Part="1" 
+F 0 "#PWR09" H 4550 2100 50  0001 C CNN
+F 1 "+12V" H 4565 2423 50  0000 C CNN
+F 2 "" H 4550 2250 50  0001 C CNN
+F 3 "" H 4550 2250 50  0001 C CNN
+	1    4550 2250
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:Screw_Terminal_01x02 J1
+U 1 1 5E8ECADB
+P 3800 2350
+F 0 "J1" H 3718 2025 50  0000 C CNN
+F 1 "CONN_POWER_IN" H 3718 2116 50  0000 C CNN
+F 2 "TerminalBlock:TerminalBlock_bornier-2_P5.08mm" H 3800 2350 50  0001 C CNN
+F 3 "~" H 3800 2350 50  0001 C CNN
+	1    3800 2350
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	4900 2250 4550 2250
+Wire Wire Line
+	4750 2700 4000 2700
+Wire Wire Line
+	4000 2700 4000 2350
+Connection ~ 4750 2700
+$Comp
+L power:GND #PWR08
+U 1 1 5E8EECFC
+P 4000 2700
+F 0 "#PWR08" H 4000 2450 50  0001 C CNN
+F 1 "GND" H 4005 2527 50  0000 C CNN
+F 2 "" H 4000 2700 50  0001 C CNN
+F 3 "" H 4000 2700 50  0001 C CNN
+	1    4000 2700
+	1    0    0    -1  
+$EndComp
+Connection ~ 4000 2700
+Connection ~ 4550 2250
+$Comp
+L Device:CP C?
+U 1 1 5E959C3C
+P 8000 3350
+AR Path="/5E959C3C" Ref="C?"  Part="1" 
+AR Path="/5E8CACC4/5E959C3C" Ref="C?"  Part="1" 
+AR Path="/5E8E5447/5E959C3C" Ref="C?"  Part="1" 
+AR Path="/5E8D8C47/5E959C3C" Ref="C10"  Part="1" 
+F 0 "C10" V 8250 3300 50  0000 C CNN
+F 1 "10uF/10V" V 8150 3200 50  0000 C CNN
+F 2 "Capacitor_THT:CP_Radial_Tantal_D4.5mm_P2.50mm" H 8038 3200 50  0001 C CNN
+F 3 "~" H 8000 3350 50  0001 C CNN
+	1    8000 3350
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5E959C42
+P 8000 3500
+AR Path="/5E959C42" Ref="#PWR?"  Part="1" 
+AR Path="/5E8CACC4/5E959C42" Ref="#PWR?"  Part="1" 
+AR Path="/5E8E5447/5E959C42" Ref="#PWR?"  Part="1" 
+AR Path="/5E8D8C47/5E959C42" Ref="#PWR0103"  Part="1" 
+F 0 "#PWR0103" H 8000 3250 50  0001 C CNN
+F 1 "GND" H 8005 3327 50  0000 C CNN
+F 2 "" H 8000 3500 50  0001 C CNN
+F 3 "" H 8000 3500 50  0001 C CNN
+	1    8000 3500
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	7650 3200 8000 3200
+Wire Wire Line
+	8000 3200 8500 3200
+Connection ~ 8000 3200
+$Comp
+L Device:C C?
+U 1 1 5E95F5F2
+P 6750 3250
+AR Path="/5E8E5447/5E95F5F2" Ref="C?"  Part="1" 
+AR Path="/5E8CACC4/5E95F5F2" Ref="C?"  Part="1" 
+AR Path="/5E8D8C47/5E95F5F2" Ref="C8"  Part="1" 
+F 0 "C8" H 6865 3296 50  0000 L CNN
+F 1 "0.1uF" H 6865 3205 50  0000 L CNN
+F 2 "Capacitor_THT:C_Rect_L4.6mm_W2.0mm_P2.50mm_MKS02_FKP02" H 6788 3100 50  0001 C CNN
+F 3 "~" H 6750 3250 50  0001 C CNN
+	1    6750 3250
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6750 3400 6750 3500
+Connection ~ 6750 3500
+Wire Wire Line
+	6750 3500 7350 3500
+Wire Wire Line
+	6750 3100 6750 3000
+Wire Wire Line
+	6750 3000 7050 3000
+Connection ~ 7050 3000
+Wire Wire Line
+	7050 3000 7050 2250
+$Comp
+L Device:Fuse F1
+U 1 1 5E960E15
+P 4350 2250
+F 0 "F1" V 4153 2250 50  0000 C CNN
+F 1 "Fuse" V 4244 2250 50  0000 C CNN
+F 2 "Fuse:Fuseholder_Cylinder-5x20mm_Schurter_0031_8201_Horizontal_Open" V 4280 2250 50  0001 C CNN
+F 3 "~" H 4350 2250 50  0001 C CNN
+	1    4350 2250
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	4500 2250 4550 2250
+Wire Wire Line
+	4200 2250 4000 2250
+$EndSCHEMATC
